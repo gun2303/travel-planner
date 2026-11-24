@@ -1,4 +1,4 @@
-const CACHE_NAME = 'travel-notebook-ehon-v4';
+const CACHE_NAME = 'travel-notebook-ehon-v5';
 const APP_SHELL = [
   './',
   './index.html',
@@ -32,10 +32,27 @@ self.addEventListener('fetch', (event) => {
   if (req.method !== 'GET') return;
   const url = new URL(req.url);
 
-  // App shell & static CDN assets: stale-while-revalidate
   const isSameOrigin = url.origin === self.location.origin;
+  const isHtmlNav = isSameOrigin && (req.mode === 'navigate' || url.pathname.endsWith('/') || url.pathname.endsWith('.html'));
   const isStaticCdn = CDN_HOSTS.some((h) => url.hostname.includes(h));
 
+  // HTML navigations: network-first so updates apply immediately, cache fallback offline
+  if (isHtmlNav) {
+    event.respondWith(
+      fetch(req)
+        .then((res) => {
+          if (res && res.ok) {
+            const clone = res.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(req, clone)).catch(() => {});
+          }
+          return res;
+        })
+        .catch(() => caches.match(req).then((c) => c || caches.match('./index.html')))
+    );
+    return;
+  }
+
+  // Other same-origin & static CDN assets: stale-while-revalidate
   if (isSameOrigin || isStaticCdn) {
     event.respondWith(
       caches.match(req).then((cached) => {
