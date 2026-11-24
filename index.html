@@ -4485,10 +4485,6 @@
         return cleaned;
       }
 
-      function getGoogleMapsEmbedUrl(query) {
-        return `https://maps.google.com/maps?q=${encodeURIComponent(query || (state && state.cityKey) || '台灣')}&t=k&z=18&output=embed&hl=zh-TW`;
-      }
-
       function getSpotPhotoUrl(cat, title, queryOverride) {
         const q = String(queryOverride || buildPlacePhotoQuery(cat, title)).trim();
         const cached = q && GMAPS_PHOTO_CACHE[q];
@@ -4837,13 +4833,10 @@
                   const hQuery = `${h.name} ${h.address || dayCity}`.trim();
                   return `
                     <div class="ehon-card-soft overflow-hidden bg-[#FFFDF7] flex flex-col justify-between ${isSelected ? 'ring-2 ring-[#2D3A4A] bg-[#F7D47A]/25' : ''}">
-                      <div class="h-32 w-full bg-[#96CBE3]/25 border-b-2 border-[#2D3A4A] overflow-hidden relative media-preview-box">
+                      <div class="h-32 w-full bg-[#96CBE3]/25 border-b-2 border-[#2D3A4A] overflow-hidden relative">
                         <img src="${getSpotPhotoUrl('飯店', h.name, hQuery)}" loading="lazy" decoding="async" data-photo-cat="飯店" data-photo-query="${escapeHtml(hQuery)}" alt="${escapeHtml(h.name)}" class="w-full h-full object-cover" onerror="this.onerror=null;this.src='${fb}'" />
                         <span class="absolute top-2 left-2 px-2 py-0.5 rounded-full text-[11px] font-bold bg-[#FFFDF7] border border-[#2D3A4A]">${hIdx === 0 ? '⭐ 交通首選' : hIdx === 1 ? '💰 高CP值' : '🌿 質感度假'}</span>
-                        <div class="absolute bottom-2 right-2 flex items-center gap-1">
-                          <button type="button" data-gmap-embed="${escapeHtml(hQuery)}" class="gmap-inline-btn px-2 py-0.5 rounded-full text-[11px] font-bold bg-[#FFFDF7]/95 border border-[#2D3A4A] hover:bg-[#96CBE3]/50">🗺️ 實景地圖</button>
-                          <a href="${getMapsUrl(hQuery)}" target="_blank" rel="noopener noreferrer" class="ext-nav-link px-2 py-0.5 rounded-full text-[11px] font-bold bg-[#FFFDF7]/95 border border-[#2D3A4A] hover:bg-[#F7D47A]">📷 Google Maps 照片</a>
-                        </div>
+                        <a href="${getMapsUrl(hQuery)}" target="_blank" rel="noopener noreferrer" class="ext-nav-link absolute bottom-2 right-2 px-2 py-0.5 rounded-full text-[11px] font-bold bg-[#FFFDF7]/95 border border-[#2D3A4A] hover:bg-[#F7D47A]">📷 Google Maps 照片</a>
                       </div>
                       <div class="p-3 space-y-1.5 text-xs flex-1 flex flex-col justify-between">
                         <div>
@@ -4853,7 +4846,7 @@
                           <p class="mt-1">${escapeHtml(h.highlights)}</p>
                         </div>
                         <div class="flex items-center justify-between gap-2 pt-2 border-t border-dashed border-[#2D3A4A]/20">
-                          <a href="${getMapsUrl(h.name + ' ' + h.address)}" target="_blank" rel="noopener noreferrer" class="ext-nav-link font-bold underline text-xs">📍 地圖</a>
+                          <a href="${getDirectionsUrl(h.name + ' ' + h.address)}" target="_blank" rel="noopener noreferrer" class="ext-nav-link font-bold underline text-xs">📍 導航</a>
                           <button type="button" class="pick-day-hotel-btn ehon-pill px-3 py-1 font-bold text-xs ${isSelected ? 'bg-[#B3D9A6]' : 'bg-[#F7D47A]'}" data-hotel-idx="${hIdx}">${isSelected ? '✓ 目前入住這間' : '選擇此飯店'}</button>
                         </div>
                       </div>
@@ -4895,12 +4888,9 @@
                     const url = getMapsUrl(fQuery);
                     return `
                       <div class="ehon-card-soft overflow-hidden bg-[#FFFDF7] flex flex-col gap-2">
-                        <div class="h-28 w-full border-b-2 border-[#2D3A4A] overflow-hidden bg-[#B3D9A6]/25 relative media-preview-box">
+                        <div class="h-28 w-full border-b-2 border-[#2D3A4A] overflow-hidden bg-[#B3D9A6]/25 relative">
                           <img src="${getSpotPhotoUrl('美食', f.name, fQuery)}" loading="lazy" decoding="async" data-photo-cat="美食" data-photo-query="${escapeHtml(fQuery)}" alt="${escapeHtml(f.name)}" class="w-full h-full object-cover" onerror="this.onerror=null;this.src='${fb}'" />
-                          <div class="absolute bottom-1.5 right-1.5 flex items-center gap-1">
-                            <button type="button" data-gmap-embed="${escapeHtml(fQuery)}" class="gmap-inline-btn px-2 py-0.5 rounded-full text-[11px] font-bold bg-[#FFFDF7]/95 border border-[#2D3A4A] hover:bg-[#96CBE3]/50">🗺️ 地圖</button>
-                            <a href="${url}" target="_blank" rel="noopener noreferrer" class="ext-nav-link px-2 py-0.5 rounded-full text-[11px] font-bold bg-[#FFFDF7]/95 border border-[#2D3A4A] hover:bg-[#F7D47A]">📷 Google Maps 照片</a>
-                          </div>
+                          <a href="${url}" target="_blank" rel="noopener noreferrer" class="ext-nav-link absolute bottom-1.5 right-1.5 px-2 py-0.5 rounded-full text-[11px] font-bold bg-[#FFFDF7]/95 border border-[#2D3A4A] hover:bg-[#F7D47A]">📷 Google Maps 照片</a>
                         </div>
                         <div class="px-2.5 pb-2.5 min-w-0 flex-1 text-xs space-y-1">
                           <div class="font-bold truncate">${escapeHtml(f.name)}</div>
@@ -4988,13 +4978,10 @@
               <div class="absolute -left-[22px] sm:-left-[24px] top-4 w-3.5 h-3.5 rounded-full ${style.bg} border-2 border-[#2D3A4A]"></div>
               <article class="itinerary-card ehon-card-soft overflow-hidden shadow-[2px_2px_0px_#2D3A4A] bg-[#FFFDF7] transition-all" data-item-id="${item.id}" data-role="${role}" ${draggableAttr}>
                 ${showItemPhoto ? `
-                  <div class="h-36 sm:h-44 w-full border-b-2 border-[#2D3A4A] overflow-hidden bg-[#96CBE3]/20 relative media-preview-box">
+                  <div class="h-36 sm:h-44 w-full border-b-2 border-[#2D3A4A] overflow-hidden bg-[#96CBE3]/20 relative">
                     <img src="${photoUrl}" loading="lazy" decoding="async" data-photo-cat="${escapeHtml(item.category)}" data-photo-query="${escapeHtml(navQuery)}" onerror="this.onerror=null;this.src='${photoFallback}';" alt="${escapeHtml(item.title)}" class="w-full h-full object-cover" />
                     <span class="absolute top-2 left-2 px-2.5 py-0.5 rounded-full text-xs font-bold border-2 border-[#2D3A4A] ${style.bg}">${style.icon} ${escapeHtml(item.category)}</span>
-                    <div class="absolute bottom-2 right-2 flex flex-wrap items-center gap-1">
-                      <button type="button" data-gmap-embed="${escapeHtml(navQuery)}" class="gmap-inline-btn px-2 py-0.5 rounded-full text-[11px] font-bold bg-[#FFFDF7]/95 border border-[#2D3A4A] hover:bg-[#96CBE3]/50">🗺️ 預覽地圖</button>
-                      <a href="${mapsHref}" target="_blank" rel="noopener noreferrer" class="ext-nav-link px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#FFFDF7]/95 border border-[#2D3A4A] hover:bg-[#F7D47A]">📷 Google Maps 實景照片</a>
-                    </div>
+                    <a href="${mapsHref}" target="_blank" rel="noopener noreferrer" class="ext-nav-link absolute bottom-2 right-2 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#FFFDF7]/95 border border-[#2D3A4A] hover:bg-[#F7D47A]">📷 Google Maps 照片</a>
                   </div>
                 ` : ''}
                 <div class="p-3.5 space-y-2">
@@ -5464,12 +5451,9 @@
         const hotelMapsUrl = getMapsUrl(hPhotoQuery);
         const hotelFb = makeEhonPhotoFallback('飯店', h.name);
         hotelBody.innerHTML = `
-          <div class="h-32 w-full rounded-2xl border-2 border-[#2D3A4A] overflow-hidden bg-[#96CBE3]/25 relative media-preview-box">
+          <div class="h-32 w-full rounded-2xl border-2 border-[#2D3A4A] overflow-hidden bg-[#96CBE3]/25 relative">
             <img src="${getSpotPhotoUrl('飯店', h.name, hPhotoQuery)}" loading="lazy" decoding="async" data-photo-cat="飯店" data-photo-query="${escapeHtml(hPhotoQuery)}" alt="${escapeHtml(h.name)}" class="w-full h-full object-cover" onerror="this.onerror=null;this.src='${hotelFb}'" />
-            <div class="absolute bottom-2 right-2 flex items-center gap-1">
-              <button type="button" data-gmap-embed="${escapeHtml(hPhotoQuery)}" class="gmap-inline-btn px-2 py-0.5 rounded-full text-[11px] font-bold bg-[#FFFDF7]/95 border border-[#2D3A4A] hover:bg-[#96CBE3]/50">🗺️ 實景地圖</button>
-              <a href="${hotelMapsUrl}" target="_blank" rel="noopener noreferrer" class="ext-nav-link px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#FFFDF7]/95 border border-[#2D3A4A] hover:bg-[#F7D47A]">📷 Google Maps 照片</a>
-            </div>
+            <a href="${hotelMapsUrl}" target="_blank" rel="noopener noreferrer" class="ext-nav-link absolute bottom-2 right-2 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#FFFDF7]/95 border border-[#2D3A4A] hover:bg-[#F7D47A]">📷 Google Maps 照片</a>
           </div>
           <div class="font-bold text-sm">${escapeHtml(h.name)}</div>
           <div><strong>📍 地址：</strong>${escapeHtml(h.address)}</div>
@@ -6721,15 +6705,6 @@
           showToast(prefs.reduceMotion ? '已減少動畫效果' : '已恢復繪本動態效果');
         });
         document.getElementById('btnGmapsApiKey').addEventListener('click', () => openMetaModal('gmapsKey'));
-        document.addEventListener('click', (e) => {
-          const btn = e.target.closest('.gmap-inline-btn');
-          if (!btn) return;
-          const q = btn.getAttribute('data-gmap-embed') || '';
-          const box = btn.closest('.media-preview-box');
-          if (!box || !q) return;
-          const iframeUrl = getGoogleMapsEmbedUrl(q);
-          box.innerHTML = `<iframe src="${iframeUrl}" title="Google Maps" class="w-full h-full border-0" loading="eager" referrerpolicy="no-referrer-when-downgrade"></iframe>`;
-        });
 
         // 分享連結 / ICS / 列印 PDF
         document.getElementById('btnShareLink').addEventListener('click', async () => {
