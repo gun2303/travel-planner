@@ -1862,13 +1862,13 @@
           return '🚇 轉運接駁：高鐵台中站可直接轉乘「台中捷運綠線」往文心森林公園／市政府／松竹，或「台鐵新烏日站」搭區間車 10 分鐘進台中火車站。';
         }
         if (d.includes('花蓮')) {
-          return '🚌 轉運接駁：台鐵花蓮站前站出口可轉乘「花蓮客運／台灣好行太魯閣線／310 縱谷花蓮線」，或站前租借機車／汽車展開行程。';
+          return '🚆 轉運接駁：台鐵花蓮站前站出口可轉乘「台灣好行太魯閣線／310 縱谷花蓮線」、計程車或站前租借機車／汽車展開行程。';
         }
         if (d.includes('宜蘭')) {
-          return '🚌 轉運接駁：葛瑪蘭／首都客運及台鐵皆停靠宜蘭／羅東／礁溪轉運站，可轉乘「台灣好行冬山河線／礁溪線」、「宜蘭勁好行」市區公車或站前租借機車。';
+          return '🚆 轉運接駁：台鐵宜蘭／羅東／礁溪站出口可轉乘「台灣好行冬山河線／礁溪線」、市區公車、計程車或站前租借機車／汽車。';
         }
         if (d.includes('台東') || d.includes('臺東')) {
-          return '🚌 轉運接駁：台鐵台東站出口可轉乘「台灣好行東部海岸線／縱谷鹿野線」、「普悠瑪客運市區線」前往市區與海濱公園，或於站前租借機車／汽車。';
+          return '🚆 轉運接駁：台鐵台東站出口可轉乘「台灣好行東部海岸線／縱谷鹿野線」、計程車或站前租借機車／汽車。';
         }
         return '🚇 轉運接駁：抵達車站後可轉乘當地捷運、輕軌、市區公車或計程車前往首站景點。';
       }
@@ -1876,8 +1876,89 @@
       const TRA_VERIFY_URL = 'https://www.railway.gov.tw/tra-tip-web/tip/tip001/tip112/gobytime';
       const TRA_BOOK_URL = 'https://www.railway.gov.tw/tra-tip-web/tip/tip001/tip121/query';
 
-      // 台鐵官方實測時刻表（EMU3000 新自強 / 普悠瑪 / 太魯閣主要快車）
+      // 台鐵官方實測時刻表（EMU3000 新自強 / 普悠瑪 / 太魯閣主要快車；台北站每日 32～37 班，多於南港 15～16 班）
       const TRA_EAST_SCHEDULES = {
+        '台北-花蓮': {
+          fare: 583,
+          trains: [
+            { type: '普悠瑪', no: '402', dep: '06:05', arr: '08:19', durMins: 134 },
+            { type: '普悠瑪', no: '22', dep: '07:05', arr: '09:13', durMins: 128 },
+            { type: '自強(3000)', no: '408', dep: '07:20', arr: '09:35', durMins: 135 },
+            { type: '自強(3000)', no: '410', dep: '07:55', arr: '10:18', durMins: 143 },
+            { type: '自強(3000)', no: '472', dep: '08:43', arr: '11:07', durMins: 144 },
+            { type: '自強(3000)', no: '278', dep: '09:30', arr: '11:58', durMins: 148 },
+            { type: '自強(3000)', no: '280', dep: '09:45', arr: '12:11', durMins: 146 },
+            { type: '自強(3000)', no: '422', dep: '10:29', arr: '13:01', durMins: 152 },
+            { type: '太魯閣', no: '218', dep: '10:53', arr: '13:11', durMins: 138 },
+            { type: '普悠瑪', no: '420', dep: '11:35', arr: '13:55', durMins: 140 },
+            { type: '自強(3000)', no: '426', dep: '12:40', arr: '14:55', durMins: 135 },
+            { type: '普悠瑪', no: '228', dep: '13:10', arr: '15:45', durMins: 155 },
+            { type: '自強(3000)', no: '428', dep: '13:52', arr: '16:21', durMins: 149 },
+            { type: '自強(3000)', no: '232', dep: '14:15', arr: '16:36', durMins: 141 },
+            { type: '自強(3000)', no: '432', dep: '15:00', arr: '17:26', durMins: 146 },
+            { type: '普悠瑪', no: '236', dep: '15:43', arr: '18:01', durMins: 138 },
+            { type: '自強(3000)', no: '434', dep: '16:02', arr: '18:26', durMins: 144 },
+            { type: '普悠瑪', no: '282', dep: '17:40', arr: '19:59', durMins: 139 },
+            { type: '自強(3000)', no: '436', dep: '18:00', arr: '20:15', durMins: 135 }
+          ]
+        },
+        '花蓮-台北': {
+          fare: 583,
+          trains: [
+            { type: '普悠瑪', no: '401', dep: '06:36', arr: '08:48', durMins: 132 },
+            { type: '自強(3000)', no: '207', dep: '07:30', arr: '10:08', durMins: 158 },
+            { type: '自強(3000)', no: '407', dep: '08:57', arr: '11:28', durMins: 151 },
+            { type: '太魯閣', no: '217', dep: '11:02', arr: '13:22', durMins: 140 },
+            { type: '普悠瑪', no: '417', dep: '12:49', arr: '15:08', durMins: 139 },
+            { type: '普悠瑪', no: '273', dep: '14:18', arr: '16:42', durMins: 144 },
+            { type: '自強(3000)', no: '421', dep: '14:33', arr: '16:52', durMins: 139 },
+            { type: '自強(3000)', no: '223', dep: '14:51', arr: '17:15', durMins: 144 },
+            { type: '自強(3000)', no: '423', dep: '15:25', arr: '17:53', durMins: 148 },
+            { type: '自強(3000)', no: '477', dep: '16:05', arr: '18:38', durMins: 153 },
+            { type: '太魯閣', no: '231', dep: '16:45', arr: '19:07', durMins: 142 },
+            { type: '自強(3000)', no: '431', dep: '17:23', arr: '19:49', durMins: 146 },
+            { type: '自強(3000)', no: '285', dep: '18:15', arr: '20:43', durMins: 148 },
+            { type: '普悠瑪', no: '21', dep: '18:28', arr: '20:48', durMins: 140 },
+            { type: '普悠瑪', no: '237', dep: '19:38', arr: '22:02', durMins: 144 },
+            { type: '自強(3000)', no: '445', dep: '20:36', arr: '23:07', durMins: 151 }
+          ]
+        },
+        '台北-宜蘭': {
+          fare: 306,
+          trains: [
+            { type: '普悠瑪', no: '402', dep: '06:05', arr: '07:13', durMins: 68 },
+            { type: '自強(3000)', no: '410', dep: '07:55', arr: '09:11', durMins: 76 },
+            { type: '自強(3000)', no: '472', dep: '08:43', arr: '10:01', durMins: 78 },
+            { type: '自強(3000)', no: '278', dep: '09:30', arr: '10:50', durMins: 80 },
+            { type: '自強(3000)', no: '280', dep: '09:45', arr: '11:03', durMins: 78 },
+            { type: '自強(3000)', no: '422', dep: '10:29', arr: '11:54', durMins: 85 },
+            { type: '太魯閣', no: '218', dep: '10:53', arr: '12:04', durMins: 71 },
+            { type: '普悠瑪', no: '420', dep: '11:35', arr: '12:49', durMins: 74 },
+            { type: '普悠瑪', no: '228', dep: '13:10', arr: '14:32', durMins: 82 },
+            { type: '自強(3000)', no: '428', dep: '13:52', arr: '15:10', durMins: 78 },
+            { type: '自強(3000)', no: '232', dep: '14:15', arr: '15:29', durMins: 74 },
+            { type: '普悠瑪', no: '236', dep: '15:43', arr: '16:54', durMins: 71 },
+            { type: '自強(3000)', no: '434', dep: '16:02', arr: '17:19', durMins: 77 },
+            { type: '普悠瑪', no: '282', dep: '17:40', arr: '18:52', durMins: 72 }
+          ]
+        },
+        '宜蘭-台北': {
+          fare: 306,
+          trains: [
+            { type: '普悠瑪', no: '401', dep: '07:38', arr: '08:48', durMins: 70 },
+            { type: '自強(3000)', no: '407', dep: '10:08', arr: '11:28', durMins: 80 },
+            { type: '自強(3000)', no: '411', dep: '11:03', arr: '12:25', durMins: 82 },
+            { type: '太魯閣', no: '217', dep: '12:08', arr: '13:22', durMins: 74 },
+            { type: '普悠瑪', no: '417', dep: '13:55', arr: '15:08', durMins: 73 },
+            { type: '自強(3000)', no: '419', dep: '15:00', arr: '16:20', durMins: 80 },
+            { type: '普悠瑪', no: '273', dep: '15:25', arr: '16:42', durMins: 77 },
+            { type: '自強(3000)', no: '423', dep: '16:33', arr: '17:53', durMins: 80 },
+            { type: '太魯閣', no: '231', dep: '17:51', arr: '19:07', durMins: 76 },
+            { type: '自強(3000)', no: '431', dep: '18:30', arr: '19:49', durMins: 79 },
+            { type: '自強(3000)', no: '285', dep: '19:22', arr: '20:43', durMins: 81 },
+            { type: '普悠瑪', no: '237', dep: '20:48', arr: '22:02', durMins: 74 }
+          ]
+        },
         '南港-花蓮': {
           fare: 558,
           trains: [
@@ -1887,10 +1968,7 @@
             { type: '太魯閣', no: '218', dep: '11:04', arr: '13:11', durMins: 127 },
             { type: '普悠瑪', no: '420', dep: '11:46', arr: '13:55', durMins: 129 },
             { type: '普悠瑪', no: '228', dep: '13:21', arr: '15:45', durMins: 144 },
-            { type: '自強(3000)', no: '428', dep: '14:03', arr: '16:21', durMins: 138 },
-            { type: '自強(3000)', no: '432', dep: '15:11', arr: '17:26', durMins: 135 },
-            { type: '普悠瑪', no: '236', dep: '15:54', arr: '18:01', durMins: 127 },
-            { type: '自強(3000)', no: '434', dep: '16:13', arr: '18:26', durMins: 133 }
+            { type: '自強(3000)', no: '428', dep: '14:03', arr: '16:21', durMins: 138 }
           ]
         },
         '花蓮-南港': {
@@ -1902,9 +1980,7 @@
             { type: '自強(3000)', no: '223', dep: '14:51', arr: '17:01', durMins: 130 },
             { type: '自強(3000)', no: '423', dep: '15:25', arr: '17:40', durMins: 135 },
             { type: '太魯閣', no: '231', dep: '16:45', arr: '18:54', durMins: 129 },
-            { type: '自強(3000)', no: '431', dep: '17:23', arr: '19:36', durMins: 133 },
-            { type: '普悠瑪', no: '237', dep: '19:38', arr: '21:49', durMins: 131 },
-            { type: '自強(3000)', no: '445', dep: '20:36', arr: '22:55', durMins: 139 }
+            { type: '自強(3000)', no: '431', dep: '17:23', arr: '19:36', durMins: 133 }
           ]
         },
         '南港-宜蘭': {
@@ -1912,23 +1988,19 @@
           trains: [
             { type: '自強(3000)', no: '406', dep: '06:41', arr: '07:50', durMins: 69 },
             { type: '自強(3000)', no: '410', dep: '08:06', arr: '09:11', durMins: 65 },
-            { type: '自強(3000)', no: '422', dep: '10:40', arr: '11:54', durMins: 74 },
             { type: '太魯閣', no: '218', dep: '11:04', arr: '12:04', durMins: 60 },
             { type: '普悠瑪', no: '420', dep: '11:46', arr: '12:49', durMins: 63 },
-            { type: '普悠瑪', no: '228', dep: '13:21', arr: '14:32', durMins: 71 },
             { type: '自強(3000)', no: '428', dep: '14:03', arr: '15:10', durMins: 67 }
           ]
         },
         '宜蘭-南港': {
           fare: 279,
           trains: [
-            { type: '自強(3000)', no: '407', dep: '10:08', arr: '11:15', durMins: 67 },
             { type: '太魯閣', no: '217', dep: '12:08', arr: '13:09', durMins: 61 },
             { type: '普悠瑪', no: '417', dep: '13:55', arr: '14:55', durMins: 60 },
             { type: '自強(3000)', no: '423', dep: '16:33', arr: '17:40', durMins: 67 },
             { type: '太魯閣', no: '231', dep: '17:51', arr: '18:54', durMins: 63 },
-            { type: '自強(3000)', no: '431', dep: '18:30', arr: '19:36', durMins: 66 },
-            { type: '普悠瑪', no: '237', dep: '20:48', arr: '21:49', durMins: 61 }
+            { type: '自強(3000)', no: '431', dep: '18:30', arr: '19:36', durMins: 66 }
           ]
         },
         '台南-台東': {
@@ -2091,49 +2163,28 @@
           return out;
         };
 
-        // 1. 台南（或中南部高鐵站）⇄ 宜蘭：最佳「高鐵北上＋國道客運」，假日防塞備案「南港轉台鐵」
+        // 1. 台南（或中南部高鐵站）⇄ 宜蘭：最佳「高鐵北上至台北車站 ＋ 同站轉乘台鐵北迴對號車」（不提供客運，台北班次每日逾 32 班）
         if (originHasHsr && (dest.includes('宜蘭')) && mode !== 'train') {
-          const busDur = 55;
-          const transferPad = 15;
+          const fareObj = THSR_FARES_FULL[`${hsrOriginSt}-台北`];
+          const hsrCost = fareObj ? `NT$ ${fareObj.std}` : '依官網';
           if (!isReturn) {
-            const hsrTp = findRealThsrTrains(hsrOriginSt, '台北', hsrDate)
-              .filter(t => t.depMins >= 6 * 60 && t.depMins <= 11 * 60 && (t.durMins <= 112))
-              .slice(0, 3);
-            const opts = hsrTp.map(h => {
-              const busDep = h.arrMins + transferPad;
-              const arrEst = busDep + busDur;
-              const tot = arrEst - h.depMins;
-              return {
-                label: `高鐵 ${h.no} (${h.dep}→台北${h.arr}) 轉 葛瑪蘭/首都客運 (約${fmtHM(busDep)}發→${fmtHM(arrEst)}抵宜蘭，共${fmtDur(tot)})`,
-                time: fmtRange(h.depMins, arrEst),
-                arrMins: arrEst,
-                durMins: tot,
-                hsrFrom: hsrOriginSt,
-                hsrTo: '台北',
-                hsrDepTime: h.dep
-              };
-            });
-            const railBackups = buildHsrToTra(hsrOriginSt, '南港', '南港-宜蘭', 18, 6 * 60 + 30, 11 * 60 + 30).slice(0, 2)
-              .map(o => ({ ...o, label: `【假日避國五塞車】${o.label}` }));
-            const allOpts = [...opts, ...railBackups];
-            const defOpt = allOpts[1] || allOpts[0];
-            const fareObj = THSR_FARES_FULL[`${hsrOriginSt}-台北`];
-            const hsrCost = fareObj ? `NT$ ${fareObj.std}` : '依官網';
+            const opts = buildHsrToTra(hsrOriginSt, '台北', '台北-宜蘭', 20, 6 * 60, 12 * 60);
+            const defOpt = opts[0];
             return {
               category: '交通',
-              time: defOpt ? defOpt.time : '07:13 - 10:05',
-              title: `最佳大眾運輸：高鐵(${hsrOriginSt}→台北) ＋ 國道客運(→宜蘭)`,
-              address: `高鐵${hsrOriginSt}站 → 高鐵台北站(台北轉運站/市府轉運站) → 宜蘭轉運站`,
-              mapsQuery: '宜蘭轉運站',
-              hours: '總耗時約 2.5 ～ 3 小時（高鐵約 1 小時 45 分 ＋ 客運約 50～60 分）',
-              cost: `高鐵標準 ${hsrCost} ＋ 客運約 NT$ 140～155（南港轉台鐵 NT$ 279）`,
-              transport: '葛瑪蘭客運(台北轉運站)／首都客運(市府轉運站) 10～15 分一班・假日可改南港轉台鐵',
+              time: defOpt ? defOpt.time : '07:13 - 10:50',
+              title: `最佳大眾運輸：高鐵(${hsrOriginSt}→台北) ＋ 台鐵北迴線(→宜蘭)`,
+              address: `高鐵${hsrOriginSt}站 → 高鐵台北站(同站地下通道轉乘) → 台鐵台北站 → 台鐵宜蘭站`,
+              mapsQuery: '宜蘭火車站',
+              hours: '總耗時約 3 ～ 3.5 小時（高鐵約 1 小時 45 分 ＋ 台鐵約 1 小時 15 分含轉乘）',
+              cost: `高鐵台北標準 ${hsrCost} ＋ 台鐵自強(3000)/太魯閣/普悠瑪 NT$ 306`,
+              transport: '台北車站台鐵往宜蘭每日逾 32 班對號快車（含多班直達不停南港車次），免受國五塞車影響',
               mustVisit: false,
               transitMode: 'hsr_hybrid',
-              scheduleOptions: allOpts,
+              scheduleOptions: opts,
               transferInfo: getDomesticTransferInfo('宜蘭'),
-              hsrFrom: (defOpt && defOpt.hsrFrom) || hsrOriginSt,
-              hsrTo: (defOpt && defOpt.hsrTo) || '台北',
+              hsrFrom: hsrOriginSt,
+              hsrTo: '台北',
               hsrDepTime: defOpt ? defOpt.hsrDepTime : '07:13',
               hsrIsReturn: false,
               verifyUrl: buildThsrQueryUrl(hsrOriginSt, '台北', hsrDate, defOpt ? defOpt.hsrDepTime : '07:13'),
@@ -2141,66 +2192,46 @@
               bookPortalUrl: THSR_BOOK_PORTAL_URL,
               traVerifyUrl: TRA_VERIFY_URL,
               traBookUrl: TRA_BOOK_URL,
-              traVerifyLabel: '🚆 驗證台鐵官方時刻表（南港→宜蘭假日備案）',
-              desc: `走北迴線比繞南迴快非常多！從${hsrOriginSt}搭高鐵北上台北轉乘葛瑪蘭／首都客運僅 10～15 分一班且不用搶火車票；若遇假日國五塞車，下方亦提供「高鐵南港站同站轉乘台鐵太魯閣／普悠瑪／新自強」備案班次。`
+              traVerifyLabel: '🚆 驗證台鐵官方時刻表（台北→宜蘭）',
+              desc: `從${hsrOriginSt}搭高鐵北上「台北車站」同站轉乘台鐵 EMU3000 新自強／普悠瑪／太魯閣號！台北往宜蘭每日對號快車多達 32 班（南港僅 15 班），還能再省高鐵票價 NT$ 40，且鐵路完全不受雪隧塞車影響。`
             };
           } else {
-            const hsrRetTp = findRealThsrTrains('台北', hsrOriginSt, hsrDate)
-              .filter(t => t.depMins >= 15 * 60 && t.depMins <= 20 * 60 && t.durMins <= 112)
-              .slice(0, 3);
-            const opts = hsrRetTp.map(h => {
-              const busDep = h.depMins - transferPad - busDur;
-              const tot = h.arrMins - busDep;
-              return {
-                label: `客運 (${fmtHM(busDep)}宜蘭→台北) 轉 高鐵 ${h.no} (${h.dep}→${hsrOriginSt}${h.arr}，共${fmtDur(tot)})`,
-                time: fmtRange(busDep, h.arrMins),
-                arrMins: h.arrMins,
-                durMins: tot,
-                hsrFrom: '台北',
-                hsrTo: hsrOriginSt,
-                hsrDepTime: h.dep
-              };
-            });
-            const railBackups = buildTraToHsr('宜蘭-南港', '南港', hsrOriginSt, 18, 13 * 60 + 30, 19 * 60).slice(0, 2)
-              .map(o => ({ ...o, label: `【假日避國五塞車】${o.label}` }));
-            const allOpts = [...opts, ...railBackups];
-            const defOpt = allOpts[1] || allOpts[0];
-            const fareObj = THSR_FARES_FULL[`台北-${hsrOriginSt}`];
-            const hsrCost = fareObj ? `NT$ ${fareObj.std}` : '依官網';
+            const opts = buildTraToHsr('宜蘭-台北', '台北', hsrOriginSt, 22, 13 * 60 + 30, 20 * 60);
+            const defOpt = opts[0];
             return {
               category: '交通',
-              time: defOpt ? defOpt.time : '15:50 - 18:42',
-              title: `最佳返程：國道客運(宜蘭→台北) ＋ 高鐵(→${hsrOriginSt})`,
-              address: `宜蘭轉運站 → 台北轉運站/市府轉運站 → 高鐵台北站 → 高鐵${hsrOriginSt}站`,
+              time: defOpt ? defOpt.time : '15:25 - 19:07',
+              title: `最佳返程：台鐵(宜蘭→台北) ＋ 高鐵(→${hsrOriginSt})`,
+              address: `台鐵宜蘭站 → 台鐵台北站(同站地下通道轉乘) → 高鐵台北站 → 高鐵${hsrOriginSt}站`,
               mapsQuery: `高鐵${hsrOriginSt}站`,
-              hours: '總耗時約 2.5 ～ 3 小時（客運約 50～60 分 ＋ 高鐵約 1 小時 45 分）',
-              cost: `客運約 NT$ 140～155 ＋ 高鐵標準 ${hsrCost}（南港轉台鐵 NT$ 279）`,
-              transport: '葛瑪蘭／首都客運密集成班回台北轉高鐵；假日塞車可改台鐵至南港站同站轉高鐵',
+              hours: '總耗時約 3 ～ 3.5 小時（台鐵約 1 小時 15 分 ＋ 高鐵約 1 小時 45 分含轉乘）',
+              cost: `台鐵自強(3000)/太魯閣/普悠瑪 NT$ 306 ＋ 高鐵台北標準 ${hsrCost}`,
+              transport: '宜蘭回台北每日逾 33 班對號快車，地下層無縫轉高鐵南下最穩定準時',
               mustVisit: false,
               transitMode: 'hsr_hybrid',
-              scheduleOptions: allOpts,
+              scheduleOptions: opts,
               transferInfo: getDomesticTransferInfo(origin || '台南'),
-              hsrFrom: (defOpt && defOpt.hsrFrom) || '台北',
-              hsrTo: (defOpt && defOpt.hsrTo) || hsrOriginSt,
-              hsrDepTime: defOpt ? defOpt.hsrDepTime : '17:00',
+              hsrFrom: '台北',
+              hsrTo: hsrOriginSt,
+              hsrDepTime: defOpt ? defOpt.hsrDepTime : '17:11',
               hsrIsReturn: true,
-              verifyUrl: buildThsrQueryUrl('台北', hsrOriginSt, hsrDate, defOpt ? defOpt.hsrDepTime : '17:00'),
+              verifyUrl: buildThsrQueryUrl('台北', hsrOriginSt, hsrDate, defOpt ? defOpt.hsrDepTime : '17:11'),
               bookUrl: THSR_BOOK_URL,
               bookPortalUrl: THSR_BOOK_PORTAL_URL,
               traVerifyUrl: TRA_VERIFY_URL,
               traBookUrl: TRA_BOOK_URL,
-              traVerifyLabel: '🚆 驗證台鐵官方時刻表（宜蘭→南港假日備案）',
-              desc: `從宜蘭搭葛瑪蘭／首都客運回台北轉乘高鐵南下最快速彈性；若假日國道五號壅塞，建議點選下方「宜蘭→南港台鐵對號車」至高鐵南港站同站轉乘回${hsrOriginSt}。`
+              traVerifyLabel: '🚆 驗證台鐵官方時刻表（宜蘭→台北）',
+              desc: `從宜蘭搭台鐵北迴對號車至台北車站地下層同站轉乘高鐵南下回${hsrOriginSt}；每日班次超過南港兩倍且不受假日國五壅塞影響。`
             };
           }
         }
 
-        // 2. 台南（或中南部高鐵站）⇄ 花蓮：最佳「高鐵北上至南港 ＋ 同站無縫轉乘台鐵新自強/普悠瑪/太魯閣」
+        // 2. 台南（或中南部高鐵站）⇄ 花蓮：最佳「高鐵北上至台北車站 ＋ 同站轉乘台鐵北迴線（每日 37 班，多出南港逾 2 倍）」
         if (originHasHsr && dest.includes('花蓮') && mode !== 'train') {
-          const fareObj = THSR_FARES_FULL[`${hsrOriginSt}-南港`];
+          const fareObj = THSR_FARES_FULL[`${hsrOriginSt}-台北`];
           const hsrCost = fareObj ? `NT$ ${fareObj.std}` : '依官網';
           if (!isReturn) {
-            const opts = buildHsrToTra(hsrOriginSt, '南港', '南港-花蓮', 20, 6 * 60, 12 * 60);
+            const opts = buildHsrToTra(hsrOriginSt, '台北', '台北-花蓮', 20, 6 * 60, 12 * 60);
             if (hsrOriginSt === '台南') {
               opts.push({
                 label: '【南迴直達參考】台鐵 301 新自強(3000) 台南 06:30 → 花蓮 10:59（4小時29分，每日僅此早班快車）',
@@ -2208,74 +2239,74 @@
                 arrMins: 10 * 60 + 59,
                 durMins: 269,
                 hsrFrom: hsrOriginSt,
-                hsrTo: '南港',
+                hsrTo: '台北',
                 hsrDepTime: '07:13'
               });
             }
             const defOpt = opts[0];
             return {
               category: '交通',
-              time: defOpt ? defOpt.time : '08:13 - 13:01',
-              title: `最佳大眾運輸：高鐵(${hsrOriginSt}→南港) ＋ 台鐵北迴線(→花蓮)`,
-              address: `高鐵${hsrOriginSt}站 → 高鐵南港站(同站轉乘) → 台鐵南港站 → 台鐵花蓮站`,
+              time: defOpt ? defOpt.time : '07:13 - 11:58',
+              title: `最佳大眾運輸：高鐵(${hsrOriginSt}→台北) ＋ 台鐵北迴線(→花蓮)`,
+              address: `高鐵${hsrOriginSt}站 → 高鐵台北站(同站地下通道轉乘) → 台鐵台北站 → 台鐵花蓮站`,
               mapsQuery: '花蓮火車站',
-              hours: '總耗時約 4 ～ 4.5 小時（高鐵約 1 小時 55 分 ＋ 台鐵約 2 小時 10 分含轉乘）',
-              cost: `高鐵南港標準 ${hsrCost} ＋ 台鐵自強(3000)/太魯閣/普悠瑪 NT$ 558`,
-              transport: '強烈推薦在「高鐵南港站」同站無縫轉乘・比台北站動線單純再省約 10 分鐘',
+              hours: '總耗時約 4 ～ 4.5 小時（高鐵約 1 小時 45 分 ＋ 台鐵約 2 小時 20 分含轉乘）',
+              cost: `高鐵台北標準 ${hsrCost} ＋ 台鐵自強(3000)/太魯閣/普悠瑪 NT$ 583`,
+              transport: '推薦「台北車站」同站轉乘：台北往花蓮每日 37 班對號快車（南港僅 16 班）且高鐵再省 NT$ 40',
               mustVisit: false,
               transitMode: 'hsr_hybrid',
               scheduleOptions: opts,
               transferInfo: getDomesticTransferInfo('花蓮'),
               hsrFrom: hsrOriginSt,
-              hsrTo: '南港',
-              hsrDepTime: defOpt ? defOpt.hsrDepTime : '08:13',
+              hsrTo: '台北',
+              hsrDepTime: defOpt ? defOpt.hsrDepTime : '07:13',
               hsrIsReturn: false,
-              verifyUrl: buildThsrQueryUrl(hsrOriginSt, '南港', hsrDate, defOpt ? defOpt.hsrDepTime : '08:13'),
+              verifyUrl: buildThsrQueryUrl(hsrOriginSt, '台北', hsrDate, defOpt ? defOpt.hsrDepTime : '07:13'),
               bookUrl: THSR_BOOK_URL,
               bookPortalUrl: THSR_BOOK_PORTAL_URL,
               traVerifyUrl: TRA_VERIFY_URL,
               traBookUrl: TRA_BOOK_URL,
-              traVerifyLabel: '🚆 驗證台鐵官方時刻表（南港→花蓮）',
-              desc: `從${hsrOriginSt}搭高鐵北上直達終點「高鐵南港站」同站無縫轉乘台鐵 EMU3000 新自強／太魯閣／普悠瑪號！雖然台南有南迴直達花蓮台鐵（約 4.5 小時，但快車一天僅早班 301 一班），經南港轉北迴線不僅全天班次多、也比在台北車站轉乘省下約 10 分鐘市區行車時間。`
+              traVerifyLabel: '🚆 驗證台鐵官方時刻表（台北→花蓮）',
+              desc: `從${hsrOriginSt}搭高鐵北上「台北車站」轉乘台鐵 EMU3000 新自強／太魯閣／普悠瑪號往花蓮！台北站往花蓮對號快車高達 37 班／日（多班直達車不停靠南港，南港僅 16 班），高鐵早 10 分鐘下車加上台鐵行車時間總耗時幾乎相同，且車次選擇多逾 2 倍！`
             };
           } else {
-            const opts = buildTraToHsr('花蓮-南港', '南港', hsrOriginSt, 22, 12 * 60 + 30, 19 * 60);
+            const opts = buildTraToHsr('花蓮-台北', '台北', hsrOriginSt, 22, 12 * 60 + 30, 19 * 60);
             if (hsrOriginSt === '台南') {
               opts.push({
                 label: '【南迴直達參考】台鐵 324 新自強(3000) 花蓮 16:01 → 台南 20:29（4小時28分，每日僅此午後快車）',
                 time: '16:01 - 20:29',
                 arrMins: 20 * 60 + 29,
                 durMins: 268,
-                hsrFrom: '南港',
+                hsrFrom: '台北',
                 hsrTo: hsrOriginSt,
-                hsrDepTime: '18:00'
+                hsrDepTime: '18:11'
               });
             }
             const defOpt = opts[0];
             return {
               category: '交通',
-              time: defOpt ? defOpt.time : '14:51 - 19:33',
-              title: `最佳返程：台鐵北迴線(花蓮→南港) ＋ 高鐵(→${hsrOriginSt})`,
-              address: `台鐵花蓮站 → 台鐵南港站(同站轉乘) → 高鐵南港站 → 高鐵${hsrOriginSt}站`,
+              time: defOpt ? defOpt.time : '14:33 - 19:07',
+              title: `最佳返程：台鐵北迴線(花蓮→台北) ＋ 高鐵(→${hsrOriginSt})`,
+              address: `台鐵花蓮站 → 台鐵台北站(同站地下通道轉乘) → 高鐵台北站 → 高鐵${hsrOriginSt}站`,
               mapsQuery: `高鐵${hsrOriginSt}站`,
-              hours: '總耗時約 4 ～ 4.5 小時（台鐵約 2 小時 10 分 ＋ 高鐵約 1 小時 55 分含轉乘）',
-              cost: `台鐵自強(3000)/太魯閣/普悠瑪 NT$ 558 ＋ 高鐵南港標準 ${hsrCost}`,
-              transport: '高鐵南港站為始發站座位好選，同站無縫轉高鐵南下超順暢',
+              hours: '總耗時約 4 ～ 4.5 小時（台鐵約 2 小時 20 分 ＋ 高鐵約 1 小時 45 分含轉乘）',
+              cost: `台鐵自強(3000)/太魯閣/普悠瑪 NT$ 583 ＋ 高鐵台北標準 ${hsrCost}`,
+              transport: '花蓮回台北每日 37 班對號快車，地下層 B1/B2 轉乘通道直達高鐵南下月台',
               mustVisit: false,
               transitMode: 'hsr_hybrid',
               scheduleOptions: opts,
               transferInfo: getDomesticTransferInfo(origin || '台南'),
-              hsrFrom: '南港',
+              hsrFrom: '台北',
               hsrTo: hsrOriginSt,
-              hsrDepTime: defOpt ? defOpt.hsrDepTime : '17:35',
+              hsrDepTime: defOpt ? defOpt.hsrDepTime : '17:31',
               hsrIsReturn: true,
-              verifyUrl: buildThsrQueryUrl('南港', hsrOriginSt, hsrDate, defOpt ? defOpt.hsrDepTime : '17:35'),
+              verifyUrl: buildThsrQueryUrl('台北', hsrOriginSt, hsrDate, defOpt ? defOpt.hsrDepTime : '17:31'),
               bookUrl: THSR_BOOK_URL,
               bookPortalUrl: THSR_BOOK_PORTAL_URL,
               traVerifyUrl: TRA_VERIFY_URL,
               traBookUrl: TRA_BOOK_URL,
-              traVerifyLabel: '🚆 驗證台鐵官方時刻表（花蓮→南港）',
-              desc: `從花蓮搭台鐵北迴線 EMU3000 新自強／太魯閣／普悠瑪至南港站，直接同站轉乘高鐵回${hsrOriginSt}；全天班次銜接密度遠高於南迴直達車。`
+              traVerifyLabel: '🚆 驗證台鐵官方時刻表（花蓮→台北）',
+              desc: `從花蓮搭台鐵北迴線 EMU3000 新自強／太魯閣／普悠瑪至台北車站，經站內地下付費轉乘通道換高鐵回${hsrOriginSt}；台北站停靠班次比南港站多出超過 2 倍，時間銜接最彈性。`
             };
           }
         }
@@ -2475,7 +2506,8 @@
         if (mode === 'train') {
           const normTraSt = (s) => {
             const x = String(s || '');
-            if (x.includes('南港') || x.includes('台北') || x.includes('臺北')) return '南港';
+            if (x.includes('南港')) return '南港';
+            if (x.includes('台北') || x.includes('臺北')) return '台北';
             if (x.includes('左營') || x.includes('高雄')) return '新左營';
             if (x.includes('台南') || x.includes('臺南')) return '台南';
             if (x.includes('花蓮')) return '花蓮';
@@ -4030,7 +4062,8 @@
               if (it.category === '交通' && (it.transitMode === 'hsr' || it.transitMode === 'hsr_hybrid' || it.transitMode === 'train' || (it.title || '').includes('台灣高鐵') || (it.title || '').includes('台鐵火車'))) {
                 const isRet = dIdx === trip.days.length - 1 && trip.days.length > 1;
                 const isEast = ['花蓮', '宜蘭', '台東', '臺東'].some(k => (dCity || '').includes(k) || (it.title || '').includes(k));
-                if (isEast && !it.traVerifyUrl && trip.transportMode !== 'drive') {
+                const hasLegacyBusOrNangang = (it.title || '').includes('客運') || (it.title || '').includes('南港') || (it.desc || '').includes('客運');
+                if (isEast && (!it.traVerifyUrl || hasLegacyBusOrNangang) && trip.transportMode !== 'drive') {
                   return Object.assign({}, it, buildTransitItem(orig, dCity, trip.transportMode || 'auto', isRet));
                 }
                 if (it.transitMode === 'train' && !it.traVerifyUrl) {
