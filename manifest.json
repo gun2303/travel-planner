@@ -1,0 +1,18 @@
+{
+  "name": "旅遊筆記 — 臺灣風情互動式旅遊規劃",
+  "short_name": "旅遊筆記",
+  "description": "臺灣風情繪本手帳風格旅遊規劃工具：高鐵真實時刻表、多段環島、去回程混搭航班、8 國記帳分攤與離線可用。",
+  "start_url": "./index.html",
+  "display": "standalone",
+  "background_color": "#FFFDF7",
+  "theme_color": "#FFFDF7",
+  "lang": "zh-Hant",
+  "icons": [
+    {
+      "src": "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' rx='38' fill='%23F7D47A'/%3E%3Cpath d='M32 76 L90 40 L148 76 Z' fill='%23F0A195' stroke='%232D3A4A' stroke-width='7' stroke-linejoin='round'/%3E%3Crect x='46' y='76' width='88' height='64' rx='10' fill='%23FFFDF7' stroke='%232D3A4A' stroke-width='7'/%3E%3Ccircle cx='90' cy='108' r='16' fill='%2396CBE3' stroke='%232D3A4A' stroke-width='5'/%3E%3C/svg%3E",
+      "sizes": "180x180",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
