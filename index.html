@@ -4637,11 +4637,11 @@
         }).catch(() => {});
       }
 
-      function getDirectionsUrl(query, coordsOverride) {
+      function getDirectionsUrl(query, coordsOverride, forceOmitOrigin = false) {
         const mode = state.transportMode === 'drive' ? 'driving' : (state.transportMode === 'hsr' || state.transportMode === 'train') ? 'transit' : '';
-        const coords = coordsOverride || getCachedOriginCoords();
+        const coords = forceOmitOrigin ? null : (coordsOverride || getCachedOriginCoords());
         const originPart = coords ? `&origin=${encodeURIComponent(coords.lat + ',' + coords.lng)}` : '';
-        return 'https://www.google.com/maps/dir/?api=1' + originPart + '&destination=' + encodeURIComponent(query || state.cityKey) + '&dir_action=navigate' + (mode ? '&travelmode=' + mode : '');
+        return 'https://www.google.com/maps/dir/?api=1' + originPart + '&destination=' + encodeURIComponent(query || state.cityKey) + (mode ? '&travelmode=' + mode : '');
       }
       function getMapsUrl(query) { return 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(query || state.cityKey); }
       function wmoToInfo(code) {
@@ -6861,31 +6861,33 @@
           try { inIframe = window.self !== window.top; } catch (err) { inIframe = true; }
 
           if (navDest) {
-            const cachedCoords = getCachedOriginCoords();
-            if (cachedCoords) {
-              link.setAttribute('href', getDirectionsUrl(navDest, cachedCoords));
-            } else if (!inIframe && !isMobile && navigator.geolocation && geoPermissionState !== 'denied') {
-              e.preventDefault();
-              if (geoPermissionState === 'granted') {
-                const pendingTab = window.open('about:blank', '_blank');
-                if (pendingTab) { try { pendingTab.opener = null; } catch (_) {} }
-                requestOriginCoords(2500).then((coords) => {
-                  const targetUrl = getDirectionsUrl(navDest, coords);
-                  if (pendingTab && !pendingTab.closed) pendingTab.location.href = targetUrl;
-                  else window.open(targetUrl, '_blank', 'noopener,noreferrer');
-                });
-              } else {
-                showToast('📍 請允許瀏覽器存取位置，以從「目前位置」開始導航…');
-                requestOriginCoords(4000).then((coords) => {
-                  const targetUrl = getDirectionsUrl(navDest, coords);
-                  link.setAttribute('href', targetUrl);
-                  const opened = window.open(targetUrl, '_blank', 'noopener,noreferrer');
-                  if (!opened) showToast('瀏覽器攔截了彈出視窗，請再點擊一次「📍 導航」即可開啟');
-                });
+            if (isMobile) {
+              link.setAttribute('href', getDirectionsUrl(navDest, null, true));
+            } else {
+              const cachedCoords = getCachedOriginCoords();
+              if (cachedCoords) {
+                link.setAttribute('href', getDirectionsUrl(navDest, cachedCoords));
+              } else if (!inIframe && navigator.geolocation && geoPermissionState !== 'denied') {
+                e.preventDefault();
+                if (geoPermissionState === 'granted') {
+                  const pendingTab = window.open('about:blank', '_blank');
+                  if (pendingTab) { try { pendingTab.opener = null; } catch (_) {} }
+                  requestOriginCoords(2500).then((coords) => {
+                    const targetUrl = getDirectionsUrl(navDest, coords);
+                    if (pendingTab && !pendingTab.closed) pendingTab.location.href = targetUrl;
+                    else window.open(targetUrl, '_blank', 'noopener,noreferrer');
+                  });
+                } else {
+                  showToast('📍 請允許瀏覽器存取位置，以查看「您的位置」到目的地的距離與時間…');
+                  requestOriginCoords(4000).then((coords) => {
+                    const targetUrl = getDirectionsUrl(navDest, coords);
+                    link.setAttribute('href', targetUrl);
+                    const opened = window.open(targetUrl, '_blank', 'noopener,noreferrer');
+                    if (!opened) showToast('瀏覽器攔截了彈出視窗，請再點擊一次「📍 導航」即可開啟');
+                  });
+                }
+                return;
               }
-              return;
-            } else if (navigator.geolocation && geoPermissionState !== 'denied') {
-              requestOriginCoords(2500);
             }
           }
 
