@@ -2072,7 +2072,54 @@
       const THSR_QUERY_HELPER_BASE = 'https://thsr-query-helper.jeffhsu323.workers.dev/';
       const THSR_VERIFY_URL = 'https://www.thsrc.com.tw/ArticleContent/a3b630bb-1066-4352-a1ef-58c7b4e8ef7c';
       const THSR_BOOK_URL = 'https://irs.thsrc.com.tw/IMINT/?locale=tw';
-      const THSR_BOOK_PORTAL_URL = 'https://www.thsrc.com.tw/ArticleContent/dea241a9-fe69-4e9d-b9a5-6caed6e486d6';
+
+      const TRA_STATION_CODES = {
+        '基隆': '0900-基隆', '南港': '0980-南港', '松山': '0990-松山',
+        '台北': '1000-臺北', '臺北': '1000-臺北', '板橋': '1020-板橋', '樹林': '1040-樹林',
+        '桃園': '1080-桃園', '中壢': '1100-中壢', '新竹': '1210-新竹', '苗栗': '3160-苗栗',
+        '台中': '3300-臺中', '臺中': '3300-臺中', '新烏日': '3340-新烏日', '彰化': '3360-彰化',
+        '雲林': '3470-斗六', '斗六': '3470-斗六', '嘉義': '4080-嘉義',
+        '台南': '4220-臺南', '臺南': '4220-臺南', '沙崙': '4220-臺南',
+        '左營': '4340-新左營', '新左營': '4340-新左營', '高雄': '4400-高雄', '屏東': '5000-屏東',
+        '墾丁': '5120-枋寮', '枋寮': '5120-枋寮', '知本': '5230-知本',
+        '台東': '6000-臺東', '臺東': '6000-臺東', '花蓮': '7000-花蓮',
+        '新城': '7030-新城', '羅東': '7160-羅東', '宜蘭': '7190-宜蘭', '礁溪': '7210-礁溪', '瑞芳': '7360-瑞芳'
+      };
+      function toTraStationCode(city) {
+        const c = String(city || '').trim();
+        for (const k of Object.keys(TRA_STATION_CODES)) {
+          if (c.includes(k)) return TRA_STATION_CODES[k];
+        }
+        return '';
+      }
+      function buildTraQueryUrl(fromStation, toStation, dateStr, timeStr) {
+        const s1 = toTraStationCode(fromStation);
+        const s2 = toTraStationCode(toStation);
+        if (!s1 || !s2 || s1 === s2) return TRA_VERIFY_URL;
+        let cleanDate = String(dateStr || '').trim().replace(/-/g, '/');
+        if (!/^\d{4}\/\d{2}\/\d{2}$/.test(cleanDate)) {
+          const now = new Date();
+          cleanDate = `${now.getFullYear()}/${String(now.getMonth() + 1).padStart(2, '0')}/${String(now.getDate()).padStart(2, '0')}`;
+        }
+        const tmMatch = String(timeStr || '').match(/(\d{1,2}):(\d{2})/);
+        let startTime = '06:00';
+        if (tmMatch) {
+          const hh = Math.max(0, Math.min(23, parseInt(tmMatch[1], 10)));
+          const mm = parseInt(tmMatch[2], 10) >= 30 ? '30' : '00';
+          startTime = `${String(hh).padStart(2, '0')}:${mm}`;
+        }
+        const params = new URLSearchParams({
+          startStation: s1,
+          endStation: s2,
+          transfer: 'ONE',
+          rideDate: cleanDate,
+          startOrEndTime: 'true',
+          startTime,
+          endTime: '23:59',
+          trainTypeList: 'ALL'
+        });
+        return `https://www.railway.gov.tw/tra-tip-web/tip/tip001/tip112/querybytime?${params.toString()}`;
+      }
 
       function buildThsrQueryUrl(fromStation, toStation, dateStr, timeStr) {
         const stFrom = toHsrStationName(fromStation);
@@ -2106,38 +2153,62 @@
           ? (isReturn ? buildDateCtx.ret : buildDateCtx.dep)
           : ((typeof state !== 'undefined' && state && (isReturn ? state.returnDate : state.departDate)) || '');
 
-        const buildHsrToTra = (stA, stB, traKey, minGap, minDepMins, maxDepMins) => {
+        const buildHsrToTra = (stA, stB, traKey, minGap, minDepMins, maxDepMins, traFromName, traToName) => {
           const hsrList = findRealThsrTrains(stA, stB, hsrDate);
           const traObj = TRA_EAST_SCHEDULES[traKey];
           if (!hsrList.length || !traObj) return [];
           const out = [];
-          const usedTra = new Set();
           for (const h of hsrList) {
             if (h.depMins < minDepMins || h.depMins > maxDepMins) continue;
-            const tra = traObj.trains.find(t => {
+            const matchedTras = traObj.trains.filter(t => {
               const td = parseHHMM(t.dep);
-              return td >= h.arrMins + minGap && td <= h.arrMins + 65 && !usedTra.has(t.no);
+              return td >= h.arrMins + minGap && td <= h.arrMins + 180;
+            }).slice(0, 4);
+            if (!matchedTras.length) continue;
+            const transfers = matchedTras.map(tra => {
+              const tDepM = parseHHMM(tra.dep);
+              const tArrM = parseHHMM(tra.arr, tDepM);
+              const totalM = tArrM - h.depMins;
+              const waitM = tDepM - h.arrMins;
+              return {
+                no: tra.no,
+                type: tra.type,
+                dep: tra.dep,
+                arr: tra.arr,
+                depMins: tDepM,
+                arrMins: tArrM,
+                durMins: totalM,
+                traFrom: traFromName,
+                traTo: traToName,
+                traDepTime: tra.dep,
+                label: `台鐵 ${tra.no} ${tra.type} (${tra.dep}→${traToName}${tra.arr}｜等${waitM}分・共${fmtDur(totalM)})`
+              };
             });
-            if (!tra) continue;
-            usedTra.add(tra.no);
-            const tDepM = parseHHMM(tra.dep);
-            const tArrM = parseHHMM(tra.arr, tDepM);
-            const totalM = tArrM - h.depMins;
+            const firstTr = transfers[0];
             out.push({
-              label: `高鐵 ${h.no} (${h.dep}→${stB}${h.arr}) 轉 台鐵${tra.no} ${tra.type} (${tra.dep}→${tra.arr}，共 ${fmtDur(totalM)})`,
-              time: fmtRange(h.depMins, tArrM),
-              arrMins: tArrM,
-              durMins: totalM,
+              label: `高鐵 ${h.no} (${h.dep}→${stB}${h.arr})`,
+              time: fmtRange(h.depMins, firstTr.arrMins),
+              leg1Dep: h.dep,
+              leg1DepMins: h.depMins,
+              leg1Arr: h.arr,
+              leg1ArrMins: h.arrMins,
+              arrMins: firstTr.arrMins,
+              durMins: firstTr.durMins,
               hsrFrom: stA,
               hsrTo: stB,
-              hsrDepTime: h.dep
+              hsrDepTime: h.dep,
+              traFrom: traFromName,
+              traTo: traToName,
+              traDepTime: firstTr.dep,
+              step2Title: `🔄 ② 接下來轉乘台鐵時刻表（${traFromName}→${traToName}，依高鐵 ${h.arr} 抵達自動銜接）：`,
+              transfers
             });
-            if (out.length >= 4) break;
+            if (out.length >= 5) break;
           }
           return out;
         };
 
-        const buildTraToHsr = (traKey, stA, stB, minGap, minTraDepMins, maxTraDepMins) => {
+        const buildTraToHsr = (traKey, stA, stB, minGap, minTraDepMins, maxTraDepMins, traFromName, traToName) => {
           const traObj = TRA_EAST_SCHEDULES[traKey];
           const hsrList = findRealThsrTrains(stA, stB, hsrDate);
           if (!traObj || !hsrList.length) return [];
@@ -2146,19 +2217,44 @@
             const tDepM = parseHHMM(tra.dep);
             if (tDepM < minTraDepMins || tDepM > maxTraDepMins) continue;
             const tArrM = parseHHMM(tra.arr, tDepM);
-            const h = hsrList.find(x => x.depMins >= tArrM + minGap && x.depMins <= tArrM + 65);
-            if (!h) continue;
-            const totalM = h.arrMins - tDepM;
+            const matchedHsrs = hsrList.filter(x => x.depMins >= tArrM + minGap && x.depMins <= tArrM + 120).slice(0, 4);
+            if (!matchedHsrs.length) continue;
+            const transfers = matchedHsrs.map(h => {
+              const totalM = h.arrMins - tDepM;
+              const waitM = h.depMins - tArrM;
+              return {
+                no: h.no,
+                dep: h.dep,
+                arr: h.arr,
+                depMins: h.depMins,
+                arrMins: h.arrMins,
+                durMins: totalM,
+                hsrFrom: stA,
+                hsrTo: stB,
+                hsrDepTime: h.dep,
+                label: `高鐵 ${h.no} (${stA}${h.dep}→${stB}${h.arr}｜等${waitM}分・共${fmtDur(totalM)})`
+              };
+            });
+            const firstH = transfers[0];
             out.push({
-              label: `台鐵${tra.no} ${tra.type} (${tra.dep}→${stA}${tra.arr}) 轉 高鐵 ${h.no} (${h.dep}→${stB}${h.arr}，共 ${fmtDur(totalM)})`,
-              time: fmtRange(tDepM, h.arrMins),
-              arrMins: h.arrMins,
-              durMins: totalM,
+              label: `台鐵 ${tra.no} ${tra.type} (${traFromName}${tra.dep}→${traToName}${tra.arr})`,
+              time: fmtRange(tDepM, firstH.arrMins),
+              leg1Dep: tra.dep,
+              leg1DepMins: tDepM,
+              leg1Arr: tra.arr,
+              leg1ArrMins: tArrM,
+              arrMins: firstH.arrMins,
+              durMins: firstH.durMins,
+              traFrom: traFromName,
+              traTo: traToName,
+              traDepTime: tra.dep,
               hsrFrom: stA,
               hsrTo: stB,
-              hsrDepTime: h.dep
+              hsrDepTime: firstH.dep,
+              step2Title: `🔄 ② 接下來轉乘高鐵時刻表（${stA}→${stB}，依台鐵 ${tra.arr} 抵達自動銜接）：`,
+              transfers
             });
-            if (out.length >= 4) break;
+            if (out.length >= 5) break;
           }
           return out;
         };
@@ -2168,11 +2264,11 @@
           const fareObj = THSR_FARES_FULL[`${hsrOriginSt}-台北`];
           const hsrCost = fareObj ? `NT$ ${fareObj.std}` : '依官網';
           if (!isReturn) {
-            const opts = buildHsrToTra(hsrOriginSt, '台北', '台北-宜蘭', 20, 6 * 60, 12 * 60);
+            const opts = buildHsrToTra(hsrOriginSt, '台北', '台北-宜蘭', 16, 6 * 60, 12 * 60, '台北', '宜蘭');
             const defOpt = opts[0];
             return {
               category: '交通',
-              time: defOpt ? defOpt.time : '07:13 - 10:50',
+              time: defOpt ? defOpt.time : '06:03 - 10:01',
               title: `最佳大眾運輸：高鐵(${hsrOriginSt}→台北) ＋ 台鐵北迴線(→宜蘭)`,
               address: `高鐵${hsrOriginSt}站 → 高鐵台北站(同站地下通道轉乘) → 台鐵台北站 → 台鐵宜蘭站`,
               mapsQuery: '宜蘭火車站',
@@ -2181,26 +2277,29 @@
               transport: '台北車站台鐵往宜蘭每日逾 32 班對號快車（含多班直達不停南港車次），免受國五塞車影響',
               mustVisit: false,
               transitMode: 'hsr_hybrid',
+              selectedStep1Idx: 0,
+              selectedStep2Idx: 0,
               scheduleOptions: opts,
               transferInfo: getDomesticTransferInfo('宜蘭'),
               hsrFrom: hsrOriginSt,
               hsrTo: '台北',
-              hsrDepTime: defOpt ? defOpt.hsrDepTime : '07:13',
+              hsrDepTime: defOpt ? defOpt.hsrDepTime : '06:03',
+              traFrom: '台北',
+              traTo: '宜蘭',
+              traDepTime: defOpt ? defOpt.traDepTime : '08:43',
               hsrIsReturn: false,
-              verifyUrl: buildThsrQueryUrl(hsrOriginSt, '台北', hsrDate, defOpt ? defOpt.hsrDepTime : '07:13'),
+              verifyUrl: buildThsrQueryUrl(hsrOriginSt, '台北', hsrDate, defOpt ? defOpt.hsrDepTime : '06:03'),
               bookUrl: THSR_BOOK_URL,
-              bookPortalUrl: THSR_BOOK_PORTAL_URL,
-              traVerifyUrl: TRA_VERIFY_URL,
+              traVerifyUrl: buildTraQueryUrl('台北', '宜蘭', hsrDate, defOpt ? defOpt.traDepTime : '08:43'),
               traBookUrl: TRA_BOOK_URL,
-              traVerifyLabel: '🚆 驗證台鐵官方時刻表（台北→宜蘭）',
-              desc: `從${hsrOriginSt}搭高鐵北上「台北車站」同站轉乘台鐵 EMU3000 新自強／普悠瑪／太魯閣號！台北往宜蘭每日對號快車多達 32 班（南港僅 15 班），還能再省高鐵票價 NT$ 40，且鐵路完全不受雪隧塞車影響。`
+              desc: `從${hsrOriginSt}搭高鐵北上「台北車站」同站轉乘台鐵 EMU3000 新自強／普悠瑪／太魯閣號！點選上方①高鐵班次後，下方②會立即帶出接駁台鐵時刻表供切換。`
             };
           } else {
-            const opts = buildTraToHsr('宜蘭-台北', '台北', hsrOriginSt, 22, 13 * 60 + 30, 20 * 60);
+            const opts = buildTraToHsr('宜蘭-台北', '台北', hsrOriginSt, 16, 13 * 60 + 30, 20 * 60, '宜蘭', '台北');
             const defOpt = opts[0];
             return {
               category: '交通',
-              time: defOpt ? defOpt.time : '15:25 - 19:07',
+              time: defOpt ? defOpt.time : '13:55 - 17:33',
               title: `最佳返程：台鐵(宜蘭→台北) ＋ 高鐵(→${hsrOriginSt})`,
               address: `台鐵宜蘭站 → 台鐵台北站(同站地下通道轉乘) → 高鐵台北站 → 高鐵${hsrOriginSt}站`,
               mapsQuery: `高鐵${hsrOriginSt}站`,
@@ -2209,19 +2308,22 @@
               transport: '宜蘭回台北每日逾 33 班對號快車，地下層無縫轉高鐵南下最穩定準時',
               mustVisit: false,
               transitMode: 'hsr_hybrid',
+              selectedStep1Idx: 0,
+              selectedStep2Idx: 0,
               scheduleOptions: opts,
               transferInfo: getDomesticTransferInfo(origin || '台南'),
               hsrFrom: '台北',
               hsrTo: hsrOriginSt,
-              hsrDepTime: defOpt ? defOpt.hsrDepTime : '17:11',
+              hsrDepTime: defOpt ? defOpt.hsrDepTime : '15:46',
+              traFrom: '宜蘭',
+              traTo: '台北',
+              traDepTime: defOpt ? defOpt.traDepTime : '13:55',
               hsrIsReturn: true,
-              verifyUrl: buildThsrQueryUrl('台北', hsrOriginSt, hsrDate, defOpt ? defOpt.hsrDepTime : '17:11'),
+              verifyUrl: buildThsrQueryUrl('台北', hsrOriginSt, hsrDate, defOpt ? defOpt.hsrDepTime : '15:46'),
               bookUrl: THSR_BOOK_URL,
-              bookPortalUrl: THSR_BOOK_PORTAL_URL,
-              traVerifyUrl: TRA_VERIFY_URL,
+              traVerifyUrl: buildTraQueryUrl('宜蘭', '台北', hsrDate, defOpt ? defOpt.traDepTime : '13:55'),
               traBookUrl: TRA_BOOK_URL,
-              traVerifyLabel: '🚆 驗證台鐵官方時刻表（宜蘭→台北）',
-              desc: `從宜蘭搭台鐵北迴對號車至台北車站地下層同站轉乘高鐵南下回${hsrOriginSt}；每日班次超過南港兩倍且不受假日國五壅塞影響。`
+              desc: `從宜蘭搭台鐵北迴對號車至台北車站地下層同站轉乘高鐵南下回${hsrOriginSt}；選擇①台鐵班次後，下方②會顯示後續高鐵南下轉乘時刻表。`
             };
           }
         }
@@ -2231,22 +2333,24 @@
           const fareObj = THSR_FARES_FULL[`${hsrOriginSt}-台北`];
           const hsrCost = fareObj ? `NT$ ${fareObj.std}` : '依官網';
           if (!isReturn) {
-            const opts = buildHsrToTra(hsrOriginSt, '台北', '台北-花蓮', 20, 6 * 60, 12 * 60);
+            const opts = buildHsrToTra(hsrOriginSt, '台北', '台北-花蓮', 16, 6 * 60, 12 * 60, '台北', '花蓮');
             if (hsrOriginSt === '台南') {
               opts.push({
-                label: '【南迴直達參考】台鐵 301 新自強(3000) 台南 06:30 → 花蓮 10:59（4小時29分，每日僅此早班快車）',
+                label: '【南迴直達】台鐵 301 新自強(3000) (台南 06:30 → 花蓮 10:59)',
                 time: '06:30 - 10:59',
                 arrMins: 10 * 60 + 59,
                 durMins: 269,
-                hsrFrom: hsrOriginSt,
-                hsrTo: '台北',
-                hsrDepTime: '07:13'
+                noHsr: true,
+                traFrom: '台南',
+                traTo: '花蓮',
+                traDepTime: '06:30',
+                transfers: []
               });
             }
             const defOpt = opts[0];
             return {
               category: '交通',
-              time: defOpt ? defOpt.time : '07:13 - 11:58',
+              time: defOpt ? defOpt.time : '06:03 - 11:07',
               title: `最佳大眾運輸：高鐵(${hsrOriginSt}→台北) ＋ 台鐵北迴線(→花蓮)`,
               address: `高鐵${hsrOriginSt}站 → 高鐵台北站(同站地下通道轉乘) → 台鐵台北站 → 台鐵花蓮站`,
               mapsQuery: '花蓮火車站',
@@ -2255,37 +2359,42 @@
               transport: '推薦「台北車站」同站轉乘：台北往花蓮每日 37 班對號快車（南港僅 16 班）且高鐵再省 NT$ 40',
               mustVisit: false,
               transitMode: 'hsr_hybrid',
+              selectedStep1Idx: 0,
+              selectedStep2Idx: 0,
               scheduleOptions: opts,
               transferInfo: getDomesticTransferInfo('花蓮'),
               hsrFrom: hsrOriginSt,
               hsrTo: '台北',
-              hsrDepTime: defOpt ? defOpt.hsrDepTime : '07:13',
+              hsrDepTime: defOpt ? defOpt.hsrDepTime : '06:03',
+              traFrom: '台北',
+              traTo: '花蓮',
+              traDepTime: defOpt ? defOpt.traDepTime : '08:43',
               hsrIsReturn: false,
-              verifyUrl: buildThsrQueryUrl(hsrOriginSt, '台北', hsrDate, defOpt ? defOpt.hsrDepTime : '07:13'),
+              verifyUrl: buildThsrQueryUrl(hsrOriginSt, '台北', hsrDate, defOpt ? defOpt.hsrDepTime : '06:03'),
               bookUrl: THSR_BOOK_URL,
-              bookPortalUrl: THSR_BOOK_PORTAL_URL,
-              traVerifyUrl: TRA_VERIFY_URL,
+              traVerifyUrl: buildTraQueryUrl('台北', '花蓮', hsrDate, defOpt ? defOpt.traDepTime : '08:43'),
               traBookUrl: TRA_BOOK_URL,
-              traVerifyLabel: '🚆 驗證台鐵官方時刻表（台北→花蓮）',
-              desc: `從${hsrOriginSt}搭高鐵北上「台北車站」轉乘台鐵 EMU3000 新自強／太魯閣／普悠瑪號往花蓮！台北站往花蓮對號快車高達 37 班／日（多班直達車不停靠南港，南港僅 16 班），高鐵早 10 分鐘下車加上台鐵行車時間總耗時幾乎相同，且車次選擇多逾 2 倍！`
+              desc: `從${hsrOriginSt}搭高鐵北上「台北車站」轉乘台鐵往花蓮！點選①高鐵班次後，下方②會顯示後續接駁的台北→花蓮台鐵車次時刻表供選擇並同步預填查票連結。`
             };
           } else {
-            const opts = buildTraToHsr('花蓮-台北', '台北', hsrOriginSt, 22, 12 * 60 + 30, 19 * 60);
+            const opts = buildTraToHsr('花蓮-台北', '台北', hsrOriginSt, 16, 12 * 60 + 30, 19 * 60, '花蓮', '台北');
             if (hsrOriginSt === '台南') {
               opts.push({
-                label: '【南迴直達參考】台鐵 324 新自強(3000) 花蓮 16:01 → 台南 20:29（4小時28分，每日僅此午後快車）',
+                label: '【南迴直達】台鐵 324 新自強(3000) (花蓮 16:01 → 台南 20:29)',
                 time: '16:01 - 20:29',
                 arrMins: 20 * 60 + 29,
                 durMins: 268,
-                hsrFrom: '台北',
-                hsrTo: hsrOriginSt,
-                hsrDepTime: '18:11'
+                noHsr: true,
+                traFrom: '花蓮',
+                traTo: '台南',
+                traDepTime: '16:01',
+                transfers: []
               });
             }
             const defOpt = opts[0];
             return {
               category: '交通',
-              time: defOpt ? defOpt.time : '14:33 - 19:07',
+              time: defOpt ? defOpt.time : '12:49 - 17:33',
               title: `最佳返程：台鐵北迴線(花蓮→台北) ＋ 高鐵(→${hsrOriginSt})`,
               address: `台鐵花蓮站 → 台鐵台北站(同站地下通道轉乘) → 高鐵台北站 → 高鐵${hsrOriginSt}站`,
               mapsQuery: `高鐵${hsrOriginSt}站`,
@@ -2294,19 +2403,22 @@
               transport: '花蓮回台北每日 37 班對號快車，地下層 B1/B2 轉乘通道直達高鐵南下月台',
               mustVisit: false,
               transitMode: 'hsr_hybrid',
+              selectedStep1Idx: 0,
+              selectedStep2Idx: 0,
               scheduleOptions: opts,
               transferInfo: getDomesticTransferInfo(origin || '台南'),
               hsrFrom: '台北',
               hsrTo: hsrOriginSt,
-              hsrDepTime: defOpt ? defOpt.hsrDepTime : '17:31',
+              hsrDepTime: defOpt ? defOpt.hsrDepTime : '15:46',
+              traFrom: '花蓮',
+              traTo: '台北',
+              traDepTime: defOpt ? defOpt.traDepTime : '12:49',
               hsrIsReturn: true,
-              verifyUrl: buildThsrQueryUrl('台北', hsrOriginSt, hsrDate, defOpt ? defOpt.hsrDepTime : '17:31'),
+              verifyUrl: buildThsrQueryUrl('台北', hsrOriginSt, hsrDate, defOpt ? defOpt.hsrDepTime : '15:46'),
               bookUrl: THSR_BOOK_URL,
-              bookPortalUrl: THSR_BOOK_PORTAL_URL,
-              traVerifyUrl: TRA_VERIFY_URL,
+              traVerifyUrl: buildTraQueryUrl('花蓮', '台北', hsrDate, defOpt ? defOpt.traDepTime : '12:49'),
               traBookUrl: TRA_BOOK_URL,
-              traVerifyLabel: '🚆 驗證台鐵官方時刻表（花蓮→台北）',
-              desc: `從花蓮搭台鐵北迴線 EMU3000 新自強／太魯閣／普悠瑪至台北車站，經站內地下付費轉乘通道換高鐵回${hsrOriginSt}；台北站停靠班次比南港站多出超過 2 倍，時間銜接最彈性。`
+              desc: `從花蓮搭台鐵北迴線 EMU3000 新自強／太魯閣／普悠瑪至台北車站，同站轉乘高鐵回${hsrOriginSt}；點選①台鐵班次後，下方②即顯示接下來轉乘的高鐵班次表。`
             };
           }
         }
@@ -2319,14 +2431,17 @@
               time: `${t.dep} - ${t.arr}`,
               arrMins: parseHHMM(t.arr, parseHHMM(t.dep)),
               durMins: t.durMins,
-              hsrFrom: '台南',
-              hsrTo: '左營',
-              hsrDepTime: t.dep
+              noHsr: true,
+              traFrom: '台南',
+              traTo: '台東',
+              traDepTime: t.dep,
+              transfers: []
             }));
-            const zuoyingBackups = buildHsrToTra('台南', '左營', '新左營-台東', 18, 6 * 60 + 30, 12 * 60 + 30).slice(0, 2)
+            const zuoyingBackups = buildHsrToTra('台南', '左營', '新左營-台東', 15, 6 * 60 + 25, 11 * 60 + 30, '新左營', '台東').slice(0, 3)
               .map(o => ({ ...o, label: `【直達沒票備選】${o.label}` }));
             const allOpts = [...directOpts, ...zuoyingBackups];
-            const defOpt = directOpts[1] || directOpts[0]; // 371 (08:49->11:32) or 161 (09:54->12:15)
+            const defIdx = 1;
+            const defOpt = directOpts[defIdx] || directOpts[0];
             return {
               category: '交通',
               time: defOpt.time,
@@ -2335,22 +2450,22 @@
               mapsQuery: '臺東火車站',
               hours: '約 2 小時 21 分 ～ 2 小時 54 分（與高鐵轉乘總時間幾乎相當且免搬行李）',
               cost: '台鐵直達 NT$ 614（左營轉乘：高鐵標準 NT$ 140 ＋ 台鐵 NT$ 509）',
-              transport: '首選臺南站直達 EMU3000 新自強號免轉乘；直達完售時可改「高鐵台南→左營＋新左營轉台鐵」',
+              transport: '首選臺南站直達 EMU3000 新自強號免轉乘；若點選左營備選高鐵，下方會顯示新左營轉乘台鐵時刻表',
               mustVisit: false,
               transitMode: 'hsr_hybrid',
+              selectedStep1Idx: defIdx,
+              selectedStep2Idx: 0,
               scheduleOptions: allOpts,
               transferInfo: getDomesticTransferInfo('台東'),
-              hsrFrom: '台南',
-              hsrTo: '左營',
-              hsrDepTime: '08:00',
+              traFrom: '台南',
+              traTo: '台東',
+              traDepTime: defOpt.traDepTime,
               hsrIsReturn: false,
-              verifyUrl: buildThsrQueryUrl('台南', '左營', hsrDate, '08:00'),
-              bookUrl: THSR_BOOK_URL,
-              bookPortalUrl: THSR_BOOK_PORTAL_URL,
-              traVerifyUrl: TRA_VERIFY_URL,
+              verifyUrl: '',
+              bookUrl: '',
+              traVerifyUrl: buildTraQueryUrl('台南', '台東', hsrDate, defOpt.traDepTime),
               traBookUrl: TRA_BOOK_URL,
-              traVerifyLabel: '🚆 驗證台鐵官方時刻表（臺南/新左營→臺東）',
-              desc: '台東位於南迴線上，從台南搭台鐵 EMU3000 新自強直達僅約 2.5 小時，加上市區往高鐵站與轉乘時間其實與轉高鐵相當，且免去搬行李換車最省事！若直達車沒票，可改選下方「高鐵至左營同站轉新左營台鐵」（新左營發車每日 13 班、更好買分段票）。'
+              desc: '台東位於南迴線上，從台南搭台鐵 EMU3000 新自強直達僅約 2.5 小時免換車最省事！若直達票售罄，可點選【直達沒票備選】高鐵台南→左營，下方會立即帶出新左營→台東轉乘台鐵時刻表。'
             };
           } else {
             const directOpts = TRA_EAST_SCHEDULES['台東-台南'].trains.filter(t => parseHHMM(t.dep) >= 15 * 60).map(t => ({
@@ -2358,11 +2473,13 @@
               time: `${t.dep} - ${t.arr}`,
               arrMins: parseHHMM(t.arr, parseHHMM(t.dep)),
               durMins: t.durMins,
-              hsrFrom: '左營',
-              hsrTo: '台南',
-              hsrDepTime: '18:15'
+              noHsr: true,
+              traFrom: '台東',
+              traTo: '台南',
+              traDepTime: t.dep,
+              transfers: []
             }));
-            const zuoyingBackups = buildTraToHsr('台東-新左營', '左營', '台南', 18, 13 * 60, 19 * 60).slice(0, 3)
+            const zuoyingBackups = buildTraToHsr('台東-新左營', '左營', '台南', 15, 13 * 60 + 30, 19 * 60, '台東', '新左營').slice(0, 3)
               .map(o => ({ ...o, label: `【直達沒票備選】${o.label}` }));
             const allOpts = [...directOpts, ...zuoyingBackups];
             const defOpt = directOpts[0] || allOpts[0];
@@ -2377,19 +2494,19 @@
               transport: '首選 168 / 386 / 324 次直達台南站免搬行李；沒票可改搭至新左營同站轉高鐵',
               mustVisit: false,
               transitMode: 'hsr_hybrid',
+              selectedStep1Idx: 0,
+              selectedStep2Idx: 0,
               scheduleOptions: allOpts,
               transferInfo: getDomesticTransferInfo('台南'),
-              hsrFrom: '左營',
-              hsrTo: '台南',
-              hsrDepTime: defOpt ? defOpt.hsrDepTime : '18:15',
+              traFrom: '台東',
+              traTo: '台南',
+              traDepTime: defOpt ? defOpt.traDepTime : '16:00',
               hsrIsReturn: true,
-              verifyUrl: buildThsrQueryUrl('左營', '台南', hsrDate, defOpt ? defOpt.hsrDepTime : '18:15'),
-              bookUrl: THSR_BOOK_URL,
-              bookPortalUrl: THSR_BOOK_PORTAL_URL,
-              traVerifyUrl: TRA_VERIFY_URL,
+              verifyUrl: '',
+              bookUrl: '',
+              traVerifyUrl: buildTraQueryUrl('台東', '台南', hsrDate, defOpt ? defOpt.traDepTime : '16:00'),
               traBookUrl: TRA_BOOK_URL,
-              traVerifyLabel: '🚆 驗證台鐵官方時刻表（臺東→臺南/新左營）',
-              desc: '台東回台南首選直達 EMU3000 新自強號（168 次 16:00→18:22 僅 2 小時 22 分），直抵台南市中心免換車；若直達票售罄，可改搭任何南迴對號車至新左營站同站轉高鐵 13 分鐘回台南。'
+              desc: '台東回台南首選直達 EMU3000 新自強號，直抵台南市中心免換車；若點選【直達沒票備選】至新左營，下方會立即顯示接駁回台南的高鐵時刻表。'
             };
           }
         }
@@ -2499,7 +2616,6 @@
             hsrIsReturn: Boolean(isReturn),
             verifyUrl: buildThsrQueryUrl(stFrom, stTo, hsrDate, itemTimeStr),
             bookUrl: THSR_BOOK_URL,
-            bookPortalUrl: THSR_BOOK_PORTAL_URL,
             desc: `高鐵${stFrom}站直達高鐵${stTo}站（${durLabel}，${fareLabel}）。車次時刻依台灣高鐵 2026/2/2 官方時刻表，點選下方車次可自動順延後續行程。`
           };
         }
@@ -2515,13 +2631,19 @@
             if (x.includes('台東') || x.includes('臺東')) return '台東';
             return x;
           };
+          const traDate = buildDateCtx
+            ? (isReturn ? buildDateCtx.ret : buildDateCtx.dep)
+            : ((typeof state !== 'undefined' && state && (isReturn ? state.returnDate : state.departDate)) || '');
           const traObj = TRA_EAST_SCHEDULES[`${normTraSt(from)}-${normTraSt(to)}`];
           if (traObj && traObj.trains && traObj.trains.length) {
             const realOpts = traObj.trains.slice(0, 6).map(t => ({
               label: `台鐵 ${t.no} ${t.type} (${t.dep}→${t.arr}，${fmtDur(t.durMins)})`,
               time: `${t.dep} - ${t.arr}`,
               arrMins: parseHHMM(t.arr, parseHHMM(t.dep)),
-              durMins: t.durMins
+              durMins: t.durMins,
+              traFrom: from,
+              traTo: to,
+              traDepTime: t.dep
             }));
             const defOpt = realOpts[isReturn ? Math.min(2, realOpts.length - 1) : Math.min(1, realOpts.length - 1)] || realOpts[0];
             return {
@@ -2533,27 +2655,36 @@
               cost: `全票 NT$ ${traObj.fare}`,
               transport: '台鐵官方時刻表實測車次・建議提早於台鐵官網訂票', mustVisit: false,
               transitMode: 'train', scheduleOptions: realOpts, transferInfo: getDomesticTransferInfo(to),
-              traVerifyUrl: TRA_VERIFY_URL,
+              traFrom: from,
+              traTo: to,
+              traDepTime: defOpt.traDepTime,
+              traIsReturn: Boolean(isReturn),
+              traVerifyUrl: buildTraQueryUrl(from, to, traDate, defOpt.traDepTime),
               traBookUrl: TRA_BOOK_URL,
-              traVerifyLabel: `🚆 驗證台鐵官方時刻表（${from}→${to}）`,
-              desc: `從${from}搭乘台鐵 EMU3000 新自強／普悠瑪／太魯閣號前往${to}，點選下方車次可自動順延調整後續行程，並可點擊台鐵官方時刻表驗證當日車次。`
+              desc: `從${from}搭乘台鐵 EMU3000 新自強／普悠瑪／太魯閣號前往${to}，點選下方車次可自動順延調整後續行程，並可點擊預填台鐵官方時刻表驗證當日車次。`
             };
           }
-          const opts = getDomesticScheduleOptions(origin, dest, 'train', isReturn);
+          const opts = getDomesticScheduleOptions(origin, dest, 'train', isReturn).map(o => ({
+            ...o, traFrom: from, traTo: to, traDepTime: String(o.time || '').split('-')[0].trim()
+          }));
           const defOpt = opts[0];
           const trainMins = estimateLandMinutes(from, to, 'train');
+          const defTime = defOpt ? defOpt.time : (isReturn ? '13:40 - 16:50' : '07:45 - 10:55');
           return {
-            category: '交通', time: defOpt ? defOpt.time : (isReturn ? '13:40 - 16:50' : '07:45 - 10:55'),
+            category: '交通', time: defTime,
             title: `台鐵火車 新自強號 / 自強號（${from} → ${to}）`, address: `台鐵${from} → 台鐵${to}`,
             mapsQuery: `台鐵${to}車站`,
             hours: isTainanTaipei ? '最快約 3 小時 17 分' : `${fmtDur(trainMins)}（自強號參考）`,
             cost: isTainanTaipei ? '約 NT$ 738' : '依台鐵官網票價表',
             transport: '台鐵直達市中心，可買台鐵便當', mustVisit: false,
             transitMode: 'train', scheduleOptions: opts, transferInfo: getDomesticTransferInfo(to),
-            traVerifyUrl: TRA_VERIFY_URL,
+            traFrom: from,
+            traTo: to,
+            traDepTime: String(defTime).split('-')[0].trim(),
+            traIsReturn: Boolean(isReturn),
+            traVerifyUrl: buildTraQueryUrl(from, to, traDate, defTime),
             traBookUrl: TRA_BOOK_URL,
-            traVerifyLabel: `🚆 驗證台鐵官方時刻表（${from}→${to}）`,
-            desc: `從${from}搭台鐵前往${to}，點選下方參考班次可順延調整後續行程，並可點擊「驗證台鐵官方時刻表」確認當日台鐵官網班次。`
+            desc: `從${from}搭台鐵前往${to}，點選下方參考班次可順延調整後續行程，並可點擊「驗證台鐵官方時刻表」自動帶入起訖站與日期確認車次。`
           };
         }
         if (mode === 'drive') {
@@ -4063,11 +4194,21 @@
                 const isRet = dIdx === trip.days.length - 1 && trip.days.length > 1;
                 const isEast = ['花蓮', '宜蘭', '台東', '臺東'].some(k => (dCity || '').includes(k) || (it.title || '').includes(k));
                 const hasLegacyBusOrNangang = (it.title || '').includes('客運') || (it.title || '').includes('南港') || (it.desc || '').includes('客運');
-                if (isEast && (!it.traVerifyUrl || hasLegacyBusOrNangang) && trip.transportMode !== 'drive') {
+                const needsStep2Upgrade = it.transitMode === 'hsr_hybrid' && !hasLegacyBusOrNangang && Array.isArray(it.scheduleOptions) && it.scheduleOptions.some(o => !o.transfers && !o.noHsr);
+                if (isEast && (!it.traVerifyUrl || hasLegacyBusOrNangang || needsStep2Upgrade) && trip.transportMode !== 'drive') {
                   return Object.assign({}, it, buildTransitItem(orig, dCity, trip.transportMode || 'auto', isRet));
                 }
-                if (it.transitMode === 'train' && !it.traVerifyUrl) {
-                  return Object.assign({}, it, { verifyUrl: '', traVerifyUrl: TRA_VERIFY_URL, traBookUrl: TRA_BOOK_URL });
+                if (it.transitMode === 'train') {
+                  const dayIso = (isRet && trip.returnDate) ? trip.returnDate : (trip.departDate ? addDaysIso(trip.departDate, dIdx) : '');
+                  const trFrom = it.traFrom || (isRet ? dCity : orig);
+                  const trTo = it.traTo || (isRet ? orig : dCity);
+                  return Object.assign({}, it, {
+                    verifyUrl: '',
+                    traFrom: trFrom,
+                    traTo: trTo,
+                    traVerifyUrl: buildTraQueryUrl(trFrom, trTo, dayIso, it.traDepTime || it.time),
+                    traBookUrl: TRA_BOOK_URL
+                  });
                 }
                 if (it.transitMode === 'hsr' && (!it.verifyUrl || (it.title || '').includes('高雄站'))) {
                   return Object.assign({}, it, buildTransitItem(orig, dCity, 'hsr', isRet));
@@ -4082,7 +4223,7 @@
                     hsrIsReturn: Boolean(isRet),
                     verifyUrl: buildThsrQueryUrl(stFrom, stTo, dayIso, hsrTm),
                     bookUrl: THSR_BOOK_URL,
-                    bookPortalUrl: THSR_BOOK_PORTAL_URL
+                    bookPortalUrl: ''
                   });
                 }
               }
@@ -4402,6 +4543,21 @@
                 }
               }
             }
+            // Fallback: Wikimedia Commons real photo search
+            const commonsUrl = 'https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrnamespace=6&gsrsearch=' + encodeURIComponent(cleanEntityName(q) || res.query) + '&gsrlimit=1&prop=imageinfo&iiprop=url&iiurlwidth=640&format=json&origin=*';
+            const cResp = await fetch(commonsUrl);
+            if (cResp.ok) {
+              const cData = await cResp.json();
+              const cPages = cData && cData.query && cData.query.pages;
+              if (cPages) {
+                const cPage = Object.values(cPages)[0];
+                const info = cPage && cPage.imageinfo && cPage.imageinfo[0];
+                const cSrc = info && (info.thumburl || info.url);
+                if (cSrc && /\.(jpe?g|png|webp)(\?|$)/i.test(cSrc)) {
+                  WIKI_PHOTO_CACHE[res.query] = cSrc; img.src = cSrc; continue;
+                }
+              }
+            }
             WIKI_PHOTO_CACHE[res.query] = 'NONE';
           } catch (e) { WIKI_PHOTO_CACHE[res.query] = 'NONE'; }
         }
@@ -4651,7 +4807,7 @@
         }
 
         const dayCity = day.cityKey || state.cityKey;
-        const showPhotoMode = ['景點', '餐廳', '美食', '飯店'].includes(activeCategoryFilter);
+        const showPhotoMode = true;
 
         if (activeCategoryFilter === '飯店') {
           const curH = getActiveDayHotel();
@@ -4726,7 +4882,10 @@
                         <div class="min-w-0 flex-1 text-xs space-y-1">
                           <div class="font-bold truncate">${escapeHtml(f.name)}</div>
                           <div class="text-[11px] text-muted truncate">順遊：${escapeHtml(f.from)}</div>
-                          <a href="${url}" target="_blank" rel="noopener noreferrer" class="ext-nav-link inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#F7D47A] border border-[#2D3A4A] text-[11px] font-bold">📍 Google 地圖導航</a>
+                          <div class="flex flex-wrap gap-1.5">
+                            <a href="${url}" target="_blank" rel="noopener noreferrer" class="ext-nav-link inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#F7D47A] border border-[#2D3A4A] text-[11px] font-bold">📍 Google 地圖導航</a>
+                            <a href="${url}" target="_blank" rel="noopener noreferrer" class="ext-nav-link inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#FFFDF7] border border-[#2D3A4A] text-[11px] font-bold">📷 Google Maps 實景</a>
+                          </div>
                         </div>
                       </div>
                     `;
@@ -4756,30 +4915,59 @@
           const photoFallback = makeEhonPhotoFallback(item.category, item.title);
           const isHsrCard = item.category === '交通' && (item.transitMode === 'hsr' || item.transitMode === 'hsr_hybrid' || (item.title || '').includes('台灣高鐵'));
           const isTraCard = item.category === '交通' && (item.transitMode === 'train' || item.transitMode === 'hsr_hybrid' || Boolean(item.traVerifyUrl));
-          let itemVerifyUrl = item.verifyUrl;
-          let itemBookUrl = item.bookUrl;
-          let itemBookPortalUrl = item.bookPortalUrl || '';
-          if (isHsrCard) {
-            const matchedOpt = (item.scheduleOptions || []).find(o => o.time === item.time);
-            const titleMatch = (item.title || '').match(/高鐵(.+?)站\s*[→>-]+\s*高鐵(.+?)站/);
-            const isRetCard = item.hsrIsReturn !== undefined ? Boolean(item.hsrIsReturn) : (activeDayIndex === nDays - 1 && nDays > 1);
-            const hsrFrom = (matchedOpt && matchedOpt.hsrFrom) || item.hsrFrom || (titleMatch ? titleMatch[1] : toHsrStationName(isRetCard ? dayCity : (state.originKey || '台南')));
-            const hsrTo = (matchedOpt && matchedOpt.hsrTo) || item.hsrTo || (titleMatch ? titleMatch[2] : toHsrStationName(isRetCard ? (state.originKey || '台南') : dayCity));
-            const hsrTimeArg = (matchedOpt && matchedOpt.hsrDepTime) || item.hsrDepTime || item.time;
-            const itemIsoDate = (isRetCard && state.returnDate) ? state.returnDate : (state.departDate ? addDaysIso(state.departDate, activeDayIndex) : '');
-            itemVerifyUrl = buildThsrQueryUrl(hsrFrom, hsrTo, itemIsoDate, hsrTimeArg);
-            itemBookUrl = THSR_BOOK_URL;
-            itemBookPortalUrl = THSR_BOOK_PORTAL_URL;
+          const stepOptions = Array.isArray(item.scheduleOptions) ? item.scheduleOptions : [];
+          let activeOptIdx = (typeof item.selectedStep1Idx === 'number' && stepOptions[item.selectedStep1Idx]) ? item.selectedStep1Idx : -1;
+          if (activeOptIdx === -1 && stepOptions.length) {
+            const byTime = stepOptions.findIndex(o => o.time === item.time);
+            activeOptIdx = byTime !== -1 ? byTime : stepOptions.findIndex(o => {
+              const tList = Array.isArray(o.transfers) ? o.transfers : [];
+              return tList.some(t => o.leg1Dep && fmtRange(parseHHMM(o.leg1Dep), t.arrMins) === item.time);
+            });
           }
-          const itemTraVerifyUrl = isTraCard ? (item.traVerifyUrl || TRA_VERIFY_URL) : '';
-          const itemTraBookUrl = isTraCard ? (item.traBookUrl || TRA_BOOK_URL) : '';
-          const itemTraVerifyLabel = item.traVerifyLabel || '🚆 驗證台鐵官方時刻表';
+          const activeOpt = activeOptIdx >= 0 ? stepOptions[activeOptIdx] : (stepOptions[0] || null);
+          const step2List = (activeOpt && Array.isArray(activeOpt.transfers)) ? activeOpt.transfers : [];
+          let activeStep2Idx = (typeof item.selectedStep2Idx === 'number' && step2List[item.selectedStep2Idx]) ? item.selectedStep2Idx : -1;
+          if (activeStep2Idx === -1 && step2List.length && activeOpt && activeOpt.leg1Dep) {
+            const byTime2 = step2List.findIndex(t => fmtRange(parseHHMM(activeOpt.leg1Dep), t.arrMins) === item.time);
+            activeStep2Idx = byTime2 !== -1 ? byTime2 : 0;
+          }
+          const activeTransfer = activeStep2Idx >= 0 ? step2List[activeStep2Idx] : (step2List[0] || null);
+          const isRetCard = item.hsrIsReturn !== undefined ? Boolean(item.hsrIsReturn) : (item.traIsReturn !== undefined ? Boolean(item.traIsReturn) : (activeDayIndex === nDays - 1 && nDays > 1));
+          const itemIsoDate = (isRetCard && state.returnDate) ? state.returnDate : (state.departDate ? addDaysIso(state.departDate, activeDayIndex) : '');
+
+          let itemVerifyUrl = '';
+          let itemBookUrl = '';
+          if (isHsrCard && !(activeOpt && activeOpt.noHsr)) {
+            const titleMatch = (item.title || '').match(/高鐵(.+?)站\s*[→>-]+\s*高鐵(.+?)站/);
+            const hsrFrom = (activeTransfer && activeTransfer.hsrFrom) || (activeOpt && activeOpt.hsrFrom) || item.hsrFrom || (titleMatch ? titleMatch[1] : toHsrStationName(isRetCard ? dayCity : (state.originKey || '台南')));
+            const hsrTo = (activeTransfer && activeTransfer.hsrTo) || (activeOpt && activeOpt.hsrTo) || item.hsrTo || (titleMatch ? titleMatch[2] : toHsrStationName(isRetCard ? (state.originKey || '台南') : dayCity));
+            const hsrTimeArg = (activeTransfer && activeTransfer.hsrDepTime) || (activeOpt && activeOpt.hsrDepTime) || item.hsrDepTime || item.time;
+            if (hsrFrom && hsrTo && hsrFrom !== hsrTo) {
+              itemVerifyUrl = buildThsrQueryUrl(hsrFrom, hsrTo, itemIsoDate, hsrTimeArg);
+              itemBookUrl = THSR_BOOK_URL;
+            }
+          }
+          let itemTraVerifyUrl = '';
+          let itemTraBookUrl = '';
+          let itemTraVerifyLabel = '🚆 驗證台鐵官方時刻表';
+          if (isTraCard) {
+            const traFrom = (activeTransfer && activeTransfer.traFrom) || (activeOpt && activeOpt.traFrom) || item.traFrom || (isRetCard ? dayCity : (state.originKey || '台南'));
+            const traTo = (activeTransfer && activeTransfer.traTo) || (activeOpt && activeOpt.traTo) || item.traTo || (isRetCard ? (state.originKey || '台南') : dayCity);
+            const traTimeArg = (activeTransfer && activeTransfer.traDepTime) || (activeOpt && activeOpt.traDepTime) || item.traDepTime || item.time;
+            const shortTm = (String(traTimeArg || '').match(/(\d{1,2}:\d{2})/) || [])[1] || '';
+            itemTraVerifyUrl = buildTraQueryUrl(traFrom, traTo, itemIsoDate, traTimeArg);
+            itemTraBookUrl = item.traBookUrl || TRA_BOOK_URL;
+            if (traFrom && traTo && traFrom !== traTo) {
+              itemTraVerifyLabel = `🚆 驗證台鐵官方時刻表（${traFrom}→${traTo}${shortTm ? ' ' + shortTm : ''}）`;
+            }
+          }
+          const showItemPhoto = showPhotoMode && ['景點', '餐廳', '美食', '飯店'].includes(item.category);
 
           return `
             <div class="relative">
               <div class="absolute -left-[22px] sm:-left-[24px] top-4 w-3.5 h-3.5 rounded-full ${style.bg} border-2 border-[#2D3A4A]"></div>
               <article class="itinerary-card ehon-card-soft overflow-hidden shadow-[2px_2px_0px_#2D3A4A] bg-[#FFFDF7] transition-all" data-item-id="${item.id}" data-role="${role}" ${draggableAttr}>
-                ${showPhotoMode ? `
+                ${showItemPhoto ? `
                   <div class="h-36 sm:h-44 w-full border-b-2 border-[#2D3A4A] overflow-hidden bg-[#96CBE3]/20 relative">
                     <img src="${photoUrl}" data-photo-cat="${escapeHtml(item.category)}" data-photo-query="${escapeHtml(item.title)}" onerror="this.onerror=null;this.src='${photoFallback}';" alt="${escapeHtml(item.title)}" class="w-full h-full object-cover" />
                     <span class="absolute top-2 left-2 px-2.5 py-0.5 rounded-full text-xs font-bold border-2 border-[#2D3A4A] ${style.bg}">${style.icon} ${escapeHtml(item.category)}</span>
@@ -4807,19 +4995,29 @@
                   <div class="space-y-1.5">
                     ${item.transport ? `<div class="inline-flex items-center gap-1 text-xs font-bold bg-[#96CBE3]/45 border border-[#2D3A4A] rounded-lg px-2 py-0.5">🚆 ${escapeHtml(item.transport)}</div>` : ''}
                     ${(item.scheduleOptions && item.scheduleOptions.length) ? `
-                      <div class="bg-[#96CBE3]/25 border-2 border-[#2D3A4A] rounded-xl p-2.5 space-y-1.5 text-xs">
-                        <div class="font-bold">🕒 選擇出發班次（點選後自動順延調整後續行程與路線）：</div>
+                      <div class="bg-[#96CBE3]/25 border-2 border-[#2D3A4A] rounded-xl p-2.5 space-y-2 text-xs">
+                        <div class="font-bold">${step2List.length ? '🕒 ① 選擇第一段出發班次（點選後自動更新下方轉乘時刻與後續行程）：' : '🕒 選擇出發班次（點選後自動順延調整後續行程與路線）：'}</div>
                         <div class="flex flex-wrap gap-1.5 tabular-nums">
                           ${item.scheduleOptions.map((opt, oIdx) => {
-                            const isCur = item.time === opt.time;
+                            const isCur = oIdx === activeOptIdx || (activeOptIdx === -1 && item.time === opt.time);
                             return `<button type="button" class="transit-slot-btn ehon-pill px-2.5 py-1 font-bold ${isCur ? 'bg-[#F7D47A]' : 'bg-[#FFFDF7]'}" data-item-id="${item.id}" data-opt-idx="${oIdx}">${escapeHtml(opt.label)}</button>`;
                           }).join('')}
                         </div>
+                        ${step2List.length ? `
+                          <div class="bg-[#FFFDF7]/85 border border-dashed border-[#2D3A4A]/50 rounded-xl p-2 space-y-1.5">
+                            <div class="font-bold text-[#2D3A4A]">${escapeHtml((activeOpt && activeOpt.step2Title) || '🔄 ② 接下來轉乘接駁時刻表：')}</div>
+                            <div class="flex flex-wrap gap-1.5 tabular-nums">
+                              ${step2List.map((tr, tIdx) => {
+                                const isCur2 = tIdx === activeStep2Idx;
+                                return `<button type="button" class="transit-step2-btn ehon-pill px-2.5 py-1 font-bold ${isCur2 ? 'bg-[#B3D9A6]' : 'bg-[#FFFDF7]'}" data-item-id="${item.id}" data-step1-idx="${Math.max(0, activeOptIdx)}" data-step2-idx="${tIdx}">${escapeHtml(tr.label)}</button>`;
+                              }).join('')}
+                            </div>
+                          </div>
+                        ` : ''}
                         ${(itemVerifyUrl || itemBookUrl || itemTraVerifyUrl || itemTraBookUrl) ? `
                           <div class="flex flex-wrap gap-3 pt-1 border-t border-dashed border-[#2D3A4A]/20 text-xs font-bold">
                             ${itemVerifyUrl ? `<a href="${itemVerifyUrl}" target="_blank" rel="noopener noreferrer" class="flight-ext-link underline">🔍 驗證高鐵官方時刻表</a>` : ''}
                             ${itemBookUrl ? `<a href="${itemBookUrl}" target="_blank" rel="noopener noreferrer" class="flight-ext-link underline">🎫 高鐵網路訂票</a>` : ''}
-                            ${itemBookPortalUrl ? `<a href="${itemBookPortalUrl}" target="_blank" rel="noopener noreferrer" class="flight-ext-link underline">📋 高鐵官網入口</a>` : ''}
                             ${itemTraVerifyUrl ? `<a href="${itemTraVerifyUrl}" target="_blank" rel="noopener noreferrer" class="flight-ext-link underline">${escapeHtml(itemTraVerifyLabel)}</a>` : ''}
                             ${itemTraBookUrl ? `<a href="${itemTraBookUrl}" target="_blank" rel="noopener noreferrer" class="flight-ext-link underline">🎫 台鐵網路訂票</a>` : ''}
                           </div>
@@ -5150,7 +5348,6 @@
                 <div class="flex flex-wrap items-center gap-2 pt-1.5 text-[11px] font-bold">
                   <a href="${r.verifyUrl || THSR_VERIFY_URL}" target="_blank" rel="noopener noreferrer" class="flight-ext-link underline cursor-pointer">🔍 驗證高鐵官方時刻表</a>
                   <a href="${THSR_BOOK_URL}" target="_blank" rel="noopener noreferrer" class="flight-ext-link underline cursor-pointer">🎫 高鐵網路訂票</a>
-                  <a href="${THSR_BOOK_PORTAL_URL}" target="_blank" rel="noopener noreferrer" class="flight-ext-link underline cursor-pointer">📋 訂票官網入口</a>
                 </div>
               </div>
             `).join('') + airportHotelsHtml;
@@ -5237,15 +5434,23 @@
         const day = state.days[activeDayIndex];
         const h = getActiveDayHotel();
         document.getElementById('hotelDayBadge').textContent = day ? `Day ${day.dayNumber} 晚間住宿（${day.dateLabel}）` : '當日住宿';
-        document.getElementById('hotelCardBody').innerHTML = `
+        const hotelBody = document.getElementById('hotelCardBody');
+        const hotelMapsUrl = getMapsUrl(h.name + ' ' + h.address);
+        const hotelFb = makeEhonPhotoFallback('飯店', h.name);
+        hotelBody.innerHTML = `
+          <div class="h-28 w-full rounded-2xl border-2 border-[#2D3A4A] overflow-hidden bg-[#96CBE3]/25 relative">
+            <img src="${getSpotPhotoUrl('飯店', h.name)}" data-photo-cat="飯店" data-photo-query="${escapeHtml(h.name)}" alt="${escapeHtml(h.name)}" class="w-full h-full object-cover" onerror="this.onerror=null;this.src='${hotelFb}'" />
+            <a href="${hotelMapsUrl}" target="_blank" rel="noopener noreferrer" class="ext-nav-link absolute bottom-2 right-2 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#FFFDF7]/95 border border-[#2D3A4A] hover:bg-[#F7D47A]">📷 Google Maps 實景</a>
+          </div>
           <div class="font-bold text-sm">${escapeHtml(h.name)}</div>
           <div><strong>📍 地址：</strong>${escapeHtml(h.address)}</div>
           <div><strong>🕒 時間：</strong>${escapeHtml(h.checkInOut)}</div>
           <div class="tabular-nums"><strong>💵 參考：</strong>${escapeHtml(h.cost)}</div>
           ${h.bookingRef ? `<div><strong>🎫 訂房代號：</strong>${escapeHtml(h.bookingRef)}</div>` : ''}
           <p class="bg-[#F0A195]/20 border-2 border-[#2D3A4A] rounded-2xl p-2.5">${escapeHtml(h.highlights)}</p>
-          <a href="${getMapsUrl(h.name + ' ' + h.address)}" target="_blank" rel="noopener noreferrer" class="ext-nav-link inline-block font-bold underline">查看飯店地圖 →</a>
+          <a href="${hotelMapsUrl}" target="_blank" rel="noopener noreferrer" class="ext-nav-link inline-block font-bold underline">查看飯店地圖與實景 →</a>
         `;
+        hydrateRealPhotos(hotelBody);
 
         document.getElementById('allDaysHotelsList').innerHTML = state.days.map((d, idx) => {
           const dh = d.hotel || state.hotel;
@@ -6822,13 +7027,53 @@
             const itemIdx = day.items.findIndex(x => x.id === transitBtn.getAttribute('data-item-id'));
             const optIdx = parseInt(transitBtn.getAttribute('data-opt-idx'), 10);
             if (itemIdx !== -1 && day.items[itemIdx].scheduleOptions && day.items[itemIdx].scheduleOptions[optIdx]) {
-              const chosen = day.items[itemIdx].scheduleOptions[optIdx];
-              day.items[itemIdx].time = chosen.time;
-              day.items[itemIdx]._userPicked = true;
+              const it = day.items[itemIdx];
+              const chosen = it.scheduleOptions[optIdx];
+              const transfers = Array.isArray(chosen.transfers) ? chosen.transfers : [];
+              const firstTr = transfers[0] || null;
+              it.selectedStep1Idx = optIdx;
+              it.selectedStep2Idx = 0;
+              it.time = (firstTr && chosen.leg1Dep) ? fmtRange(parseHHMM(chosen.leg1Dep), firstTr.arrMins) : chosen.time;
+              if (chosen.hsrFrom) it.hsrFrom = chosen.hsrFrom;
+              if (chosen.hsrTo) it.hsrTo = chosen.hsrTo;
+              it.hsrDepTime = (firstTr && firstTr.hsrDepTime) || chosen.hsrDepTime || '';
+              if (chosen.traFrom) it.traFrom = chosen.traFrom;
+              if (chosen.traTo) it.traTo = chosen.traTo;
+              it.traDepTime = (firstTr && firstTr.traDepTime) || chosen.traDepTime || '';
+              it._userPicked = true;
               rescheduleDay(state, activeDayIndex, 'shift');
               saveState(); renderAll(true);
               const tooLate = day.items.some(x => x._overflow);
-              showToast(tooLate ? `已切換為「${chosen.label}」，有行程排不下（已標示 ⚠️），可刪除或改搭其他班次` : `已切換為「${chosen.label}」，當天行程時間已自動調整`);
+              showToast(tooLate ? `已切換為「${chosen.label}」，有行程排不下（已標示 ⚠️），可刪除或改搭其他班次` : `已切換為「${chosen.label}」，轉乘時刻表與後續行程已同步更新`);
+            }
+            return;
+          }
+
+          const step2Btn = e.target.closest('.transit-step2-btn');
+          if (step2Btn) {
+            const day = state.days[activeDayIndex];
+            const itemIdx = day.items.findIndex(x => x.id === step2Btn.getAttribute('data-item-id'));
+            const optIdx = parseInt(step2Btn.getAttribute('data-step1-idx'), 10);
+            const trIdx = parseInt(step2Btn.getAttribute('data-step2-idx'), 10);
+            if (itemIdx !== -1) {
+              const it = day.items[itemIdx];
+              const opt = it.scheduleOptions && it.scheduleOptions[optIdx];
+              const tr = opt && Array.isArray(opt.transfers) && opt.transfers[trIdx];
+              if (opt && tr) {
+                it.selectedStep1Idx = optIdx;
+                it.selectedStep2Idx = trIdx;
+                if (opt.leg1Dep) it.time = fmtRange(parseHHMM(opt.leg1Dep), tr.arrMins);
+                if (tr.hsrFrom) it.hsrFrom = tr.hsrFrom;
+                if (tr.hsrTo) it.hsrTo = tr.hsrTo;
+                if (tr.hsrDepTime) it.hsrDepTime = tr.hsrDepTime;
+                if (tr.traFrom) it.traFrom = tr.traFrom;
+                if (tr.traTo) it.traTo = tr.traTo;
+                if (tr.traDepTime) it.traDepTime = tr.traDepTime;
+                it._userPicked = true;
+                rescheduleDay(state, activeDayIndex, 'shift');
+                saveState(); renderAll(true);
+                showToast(`已選擇轉乘車次：${tr.label}`);
+              }
             }
             return;
           }
