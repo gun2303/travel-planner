@@ -310,6 +310,7 @@
             <div class="border-t border-dashed border-[#2D3A4A]/25 my-1"></div>
             <button type="button" id="btnToggleDark" class="w-full text-left px-3 py-2 rounded-xl hover:bg-[#96CBE3]/35">🌙 護眼深色模式</button>
             <button type="button" id="btnToggleMotion" class="w-full text-left px-3 py-2 rounded-xl hover:bg-[#96CBE3]/35">✨ 減少動態效果：關</button>
+            <button type="button" id="btnGmapsApiKey" class="w-full text-left px-3 py-2 rounded-xl hover:bg-[#F7D47A]/45">🔑 Google Maps 照片 Key</button>
             <button type="button" id="btnResetTrip" class="w-full text-left px-3 py-2 rounded-xl hover:bg-[#F0A195]/50">🔄 恢復預設行程</button>
           </div>
         </div>
@@ -4436,21 +4437,34 @@
         }
       }
 
-      const SPOT_PHOTO_MAP = {
-        '赤崁樓': 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3e/Chihkan_Tower_2018.jpg/640px-Chihkan_Tower_2018.jpg',
-        '安平古堡': 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/Anping_Old_Fort_2017.jpg/640px-Anping_Old_Fort_2017.jpg',
-        '林百貨': 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/19/Hayashi_Department_Store_20140812.jpg/640px-Hayashi_Department_Store_20140812.jpg',
-        '101': 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4b/Taipei_101_from_Xiangshan_2022.jpg/640px-Taipei_101_from_Xiangshan_2022.jpg',
-        '龍山寺': 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0c/Bangka_Lungshan_Temple_2019.jpg/640px-Bangka_Lungshan_Temple_2019.jpg',
-        '大稻埕': 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b7/Dihua_Street_Taipei_2019.jpg/640px-Dihua_Street_Taipei_2019.jpg',
-        '七星潭': 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/23/Qixingtan_Beach_Hualien.jpg/640px-Qixingtan_Beach_Hualien.jpg',
-        '慶修院': 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/63/Ji%27an_Qingxiu_Temple_2017.jpg/640px-Ji%27an_Qingxiu_Temple_2017.jpg',
-        '伯朗大道': 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5f/Mr._Brown_Avenue_Chishang.jpg/640px-Mr._Brown_Avenue_Chishang.jpg',
-        '多良': 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f1/Duoliang_Station_2016.jpg/640px-Duoliang_Station_2016.jpg',
-        '澄清湖': 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/45/Chengcing_Lake_Jiuqu_Bridge.jpg/640px-Chengcing_Lake_Jiuqu_Bridge.jpg',
-        '駁二': 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c8/Pier-2_Art_Center_Kaohsiung.jpg/640px-Pier-2_Art_Center_Kaohsiung.jpg',
-        '龍虎塔': 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/86/Dragon_and_Tiger_Pagodas_2018.jpg/640px-Dragon_and_Tiger_Pagodas_2018.jpg'
-      };
+      const GMAPS_KEY_STORAGE = 'tripcraft_gmaps_api_key_v1';
+      const GMAPS_PHOTO_CACHE_KEY = 'tripcraft_gmaps_photo_cache_v1';
+      const GMAPS_PHOTO_CACHE = (() => {
+        try {
+          const parsed = JSON.parse(localStorage.getItem(GMAPS_PHOTO_CACHE_KEY) || '{}');
+          return (parsed && typeof parsed === 'object') ? parsed : {};
+        } catch (e) { return {}; }
+      })();
+      const GMAPS_INFLIGHT = new Map();
+
+      function getGmapsApiKey() {
+        try {
+          const u = new URLSearchParams(window.location.search).get('gmap_key');
+          if (u && u.trim()) {
+            localStorage.setItem(GMAPS_KEY_STORAGE, u.trim());
+            return u.trim();
+          }
+          return (localStorage.getItem(GMAPS_KEY_STORAGE) || '').trim();
+        } catch (e) { return ''; }
+      }
+
+      function saveGmapsPhotoCache() {
+        try {
+          const keys = Object.keys(GMAPS_PHOTO_CACHE);
+          if (keys.length > 160) keys.slice(0, keys.length - 120).forEach(k => delete GMAPS_PHOTO_CACHE[k]);
+          localStorage.setItem(GMAPS_PHOTO_CACHE_KEY, JSON.stringify(GMAPS_PHOTO_CACHE));
+        } catch (e) {}
+      }
 
       function makeEhonPhotoFallback(cat, title) {
         const bg = cat === '景點' ? '%23F0A195' : cat === '餐廳' ? '%23F7D47A' : cat === '美食' ? '%23B3D9A6' : '%2396CBE3';
@@ -4459,108 +4473,106 @@
         return `data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 400 180'%3E%3Crect width='400' height='180' fill='${bg}' fill-opacity='0.45'/%3E%3Ccircle cx='340' cy='40' r='22' fill='%23F7D47A' stroke='%232D3A4A' stroke-width='3'/%3E%3Cpath d='M0 145 Q100 115 200 140 T400 130 L400 180 L0 180 Z' fill='%23B3D9A6' stroke='%232D3A4A' stroke-width='3'/%3E%3Ctext x='200' y='88' text-anchor='middle' font-size='44'%3E${emoji}%3C/text%3E%3Ctext x='200' y='125' text-anchor='middle' font-family='sans-serif' font-weight='bold' font-size='16' fill='%232D3A4A'%3E${shortT}%3C/text%3E%3C/svg%3E`;
       }
 
-      const SPOT_WIKI_MAP = {
-        '赤崁樓': '赤崁樓', '安平古堡': '安平古堡', '林百貨': '林百貨', '台北101': '台北101', '101': '台北101',
-        '龍山寺': '艋舺龍山寺', '大稻埕': '大稻埕', '七星潭': '七星潭', '慶修院': '吉安慶修院',
-        '伯朗大道': '伯朗大道', '多良': '多良車站', '澄清湖': '澄清湖', '駁二': '駁二藝術特區',
-        '龍虎塔': '蓮池潭', '蓮池潭': '蓮池潭', '高美濕地': '高美濕地', '宮原眼科': '宮原眼科_(臺中市)',
-        '醉月樓': '宮原眼科_(臺中市)', '羅東夜市': '羅東夜市', '羅東觀光夜市': '羅東夜市',
-        '林業文化園區': '羅東林業文化園區', '蘭陽博物館': '蘭陽博物館', '太魯閣': '太魯閣國家公園',
-        '義大': '義大世界', '西子灣': '西子灣', '旗津': '旗津區', '鹿野高台': '鹿野高台',
-        '國華街': '國華街', '花園夜市': '花園夜市', '寧夏夜市': '寧夏夜市', '瑞豐夜市': '瑞豐夜市',
-        '東大門夜市': '東大門夜市', '第二零售市場': '臺中市公有第二零售市場', '審計新村': '審計新村',
-        '國立台灣美術館': '國立臺灣美術館', '國立自然科學博物館': '國立自然科學博物館',
-        '幾米公園': '宜蘭幾米公園', '傳藝園區': '國立傳統藝術中心', '知本': '知本溫泉',
-        '三仙台': '三仙台', '清水斷崖': '清水斷崖', '奇美博物館': '奇美博物館', '孔廟': '臺南孔子廟',
-        '鼎泰豐': '鼎泰豐', '阜杭豆漿': '阜杭豆漿', '度小月': '度小月擔仔麵', '周氏蝦捲': '周氏蝦捲',
-        '牛肉麵': '牛肉麵', '牛肉湯': '台南牛肉湯', '小籠湯包': '小籠包', '小籠包': '小籠包',
-        '滷肉飯': '滷肉飯', '肉燥飯': '滷肉飯', '臭豆腐': '臭豆腐', '蚵仔煎': '蚵仔煎',
-        '豆花': '豆花', '珍珠奶茶': '珍珠奶茶', '綠豆沙': '綠豆沙', '紅豆湯圓': '湯圓',
-        '米糕': '米糕', '碗粿': '碗粿', '割包': '割包', '酸菜白肉鍋': '酸菜白肉鍋',
-        '壽司': '壽司', '大阪燒': '御好燒', '海鮮丼': '海鮮丼', '湯咖哩': '湯咖哩',
-        '義大皇家酒店': '義大皇家酒店', '圓山大飯店': '圓山大飯店', '台北君悅': '台北君悅酒店',
-        '老爺酒店': '老爺大酒店', '漢來大飯店': '漢來大飯店'
-      };
-      const WIKI_PHOTO_CACHE = {};
-
       function cleanEntityName(raw) {
         return String(raw || '').replace(/【[^】]*】/g, '').replace(/[（(][^）)]*[）)]/g, '').split(/[・／/|｜、，,或&]/)[0].trim();
       }
 
-      function resolveWikiTopic(cat, title) {
-        const t = String(title || '');
-        for (const k of Object.keys(SPOT_WIKI_MAP)) {
-          if (t.includes(k)) return { type: 'exact', query: SPOT_WIKI_MAP[k] };
-        }
-        const cleaned = cleanEntityName(t);
-        if (cleaned && cleaned.length >= 2) return { type: 'search', query: cleaned };
-        return null;
+      function buildPlacePhotoQuery(cat, title, hintCity) {
+        const cleaned = cleanEntityName(title);
+        const city = String(hintCity || (typeof state !== 'undefined' && state && state.cityKey) || '').trim();
+        if (!cleaned) return city;
+        if (city && !cleaned.includes(city)) return `${cleaned} ${city}`;
+        return cleaned;
       }
 
-      function getSpotPhotoUrl(cat, title) {
-        for (const k of Object.keys(SPOT_PHOTO_MAP)) {
-          if ((title || '').includes(k)) return SPOT_PHOTO_MAP[k];
+      function getGoogleMapsEmbedUrl(query) {
+        return `https://maps.google.com/maps?q=${encodeURIComponent(query || (state && state.cityKey) || '台灣')}&t=k&z=18&output=embed&hl=zh-TW`;
+      }
+
+      function getSpotPhotoUrl(cat, title, queryOverride) {
+        const q = String(queryOverride || buildPlacePhotoQuery(cat, title)).trim();
+        const cached = q && GMAPS_PHOTO_CACHE[q];
+        if (cached && cached.url && cached.url !== 'NONE' && (Date.now() - (cached.ts || 0)) < 7 * 86400 * 1000) {
+          return cached.url;
         }
-        const res = resolveWikiTopic(cat, title);
-        if (res && WIKI_PHOTO_CACHE[res.query] && WIKI_PHOTO_CACHE[res.query] !== 'NONE') return WIKI_PHOTO_CACHE[res.query];
-        return makeEhonPhotoFallback(cat, title);
+        return makeEhonPhotoFallback(cat, cleanEntityName(title) || title);
+      }
+
+      async function fetchGooglePlacePhotoUrl(query, apiKey) {
+        if (!query || !apiKey) return 'NONE';
+        const existing = GMAPS_PHOTO_CACHE[query];
+        if (existing && existing.url && (Date.now() - (existing.ts || 0)) < 7 * 86400 * 1000) {
+          return existing.url;
+        }
+        if (GMAPS_INFLIGHT.has(query)) return GMAPS_INFLIGHT.get(query);
+        const job = (async () => {
+          try {
+            const resp = await fetch('https://places.googleapis.com/v1/places:searchText', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+                'X-Goog-Api-Key': apiKey,
+                'X-Goog-FieldMask': 'places.id,places.photos'
+              },
+              body: JSON.stringify({ textQuery: query, languageCode: 'zh-TW', maxResultCount: 1 })
+            });
+            if (!resp.ok) {
+              GMAPS_PHOTO_CACHE[query] = { url: 'NONE', ts: Date.now() };
+              return 'NONE';
+            }
+            const data = await resp.json();
+            const photoName = data && data.places && data.places[0] && data.places[0].photos && data.places[0].photos[0] && data.places[0].photos[0].name;
+            const url = photoName ? `https://places.googleapis.com/v1/${photoName}/media?maxWidthPx=640&key=${encodeURIComponent(apiKey)}` : 'NONE';
+            GMAPS_PHOTO_CACHE[query] = { url, ts: Date.now() };
+            saveGmapsPhotoCache();
+            return url;
+          } catch (e) {
+            return 'NONE';
+          } finally {
+            GMAPS_INFLIGHT.delete(query);
+          }
+        })();
+        GMAPS_INFLIGHT.set(query, job);
+        return job;
       }
 
       async function hydrateRealPhotos(rootEl) {
         if (!rootEl) return;
-        const imgs = rootEl.querySelectorAll('img[data-photo-query]');
-        for (const img of imgs) {
-          const cat = img.getAttribute('data-photo-cat') || '景點';
-          const q = img.getAttribute('data-photo-query') || '';
-          const res = resolveWikiTopic(cat, q);
-          if (!res) continue;
-          if (WIKI_PHOTO_CACHE[res.query]) {
-            if (WIKI_PHOTO_CACHE[res.query] !== 'NONE' && img.src !== WIKI_PHOTO_CACHE[res.query]) img.src = WIKI_PHOTO_CACHE[res.query];
-            continue;
+        const apiKey = getGmapsApiKey();
+        if (!apiKey) return;
+        const imgs = Array.from(rootEl.querySelectorAll('img[data-photo-query]'));
+        if (!imgs.length) return;
+        // 平行加速載入（每次最多 6 筆併發，避免逐張等待延遲）
+        const queue = imgs.slice();
+        const worker = async () => {
+          while (queue.length) {
+            const img = queue.shift();
+            const q = (img.getAttribute('data-photo-query') || '').trim();
+            if (!q) continue;
+            const src = await fetchGooglePlacePhotoUrl(q, apiKey);
+            if (src && src !== 'NONE' && img.src !== src) {
+              img.src = src;
+            }
           }
-          try {
-            if (res.type === 'exact') {
-              const resp = await fetch('https://zh.wikipedia.org/api/rest_v1/page/summary/' + encodeURIComponent(res.query));
-              if (resp.ok) {
-                const data = await resp.json();
-                const src = data && data.thumbnail && data.thumbnail.source;
-                if (src) { WIKI_PHOTO_CACHE[res.query] = src; img.src = src; continue; }
-              }
-            } else {
-              const url = 'https://zh.wikipedia.org/w/api.php?action=query&generator=search&gsrsearch=' + encodeURIComponent(res.query) + '&gsrlimit=1&prop=pageimages&piprop=thumbnail&pithumbsize=640&format=json&origin=*';
-              const resp = await fetch(url);
-              if (resp.ok) {
-                const data = await resp.json();
-                const pages = data && data.query && data.query.pages;
-                if (pages) {
-                  const page = Object.values(pages)[0];
-                  const pageTitle = (page && page.title) || '';
-                  const src = page && page.thumbnail && page.thumbnail.source;
-                  const cleanQ = res.query.replace(/(大飯店|飯店|酒店|旅店|行旅|商旅|總店|創始店|店)$/g, '');
-                  if (src && cleanQ.length >= 2 && (pageTitle.includes(cleanQ) || res.query.includes(pageTitle))) {
-                    WIKI_PHOTO_CACHE[res.query] = src; img.src = src; continue;
-                  }
-                }
-              }
-            }
-            // Fallback: Wikimedia Commons real photo search
-            const commonsUrl = 'https://commons.wikimedia.org/w/api.php?action=query&generator=search&gsrnamespace=6&gsrsearch=' + encodeURIComponent(cleanEntityName(q) || res.query) + '&gsrlimit=1&prop=imageinfo&iiprop=url&iiurlwidth=640&format=json&origin=*';
-            const cResp = await fetch(commonsUrl);
-            if (cResp.ok) {
-              const cData = await cResp.json();
-              const cPages = cData && cData.query && cData.query.pages;
-              if (cPages) {
-                const cPage = Object.values(cPages)[0];
-                const info = cPage && cPage.imageinfo && cPage.imageinfo[0];
-                const cSrc = info && (info.thumburl || info.url);
-                if (cSrc && /\.(jpe?g|png|webp)(\?|$)/i.test(cSrc)) {
-                  WIKI_PHOTO_CACHE[res.query] = cSrc; img.src = cSrc; continue;
-                }
-              }
-            }
-            WIKI_PHOTO_CACHE[res.query] = 'NONE';
-          } catch (e) { WIKI_PHOTO_CACHE[res.query] = 'NONE'; }
-        }
+        };
+        await Promise.all(Array.from({ length: Math.min(6, imgs.length) }, worker));
+      }
+
+      function prefetchSwapGooglePhotos(dayCity) {
+        const apiKey = getGmapsApiKey();
+        if (!apiKey || !dayCity) return;
+        const pool = DESTINATION_POOLS[dayCity];
+        if (!pool) return;
+        const queries = [];
+        [pool.hotel, ...(pool.altHotels || [])].forEach(h => { if (h && h.name) queries.push(`${h.name} ${h.address || dayCity}`); });
+        ['景點', '餐廳', '美食'].forEach(cat => {
+          ((pool.alternatives && pool.alternatives[cat]) || []).slice(0, 4).forEach(it => {
+            if (it && it.title) queries.push(it.mapsQuery || buildPlacePhotoQuery(cat, it.title, it.address || dayCity));
+          });
+        });
+        queries.slice(0, 8).forEach(q => {
+          if (!GMAPS_PHOTO_CACHE[q]) fetchGooglePlacePhotoUrl(q, apiKey);
+        });
       }
 
       function getCategoryStyle(cat) {
@@ -4822,12 +4834,16 @@
                 ${allHotelOpts.map((h, hIdx) => {
                   const isSelected = curH && curH.name === h.name;
                   const fb = makeEhonPhotoFallback('飯店', h.name);
+                  const hQuery = `${h.name} ${h.address || dayCity}`.trim();
                   return `
                     <div class="ehon-card-soft overflow-hidden bg-[#FFFDF7] flex flex-col justify-between ${isSelected ? 'ring-2 ring-[#2D3A4A] bg-[#F7D47A]/25' : ''}">
-                      <div class="h-32 w-full bg-[#96CBE3]/25 border-b-2 border-[#2D3A4A] overflow-hidden relative">
-                        <img src="${getSpotPhotoUrl('飯店', h.name)}" data-photo-cat="飯店" data-photo-query="${escapeHtml(h.name)}" alt="${escapeHtml(h.name)}" class="w-full h-full object-cover" onerror="this.onerror=null;this.src='${fb}'" />
+                      <div class="h-32 w-full bg-[#96CBE3]/25 border-b-2 border-[#2D3A4A] overflow-hidden relative media-preview-box">
+                        <img src="${getSpotPhotoUrl('飯店', h.name, hQuery)}" loading="lazy" decoding="async" data-photo-cat="飯店" data-photo-query="${escapeHtml(hQuery)}" alt="${escapeHtml(h.name)}" class="w-full h-full object-cover" onerror="this.onerror=null;this.src='${fb}'" />
                         <span class="absolute top-2 left-2 px-2 py-0.5 rounded-full text-[11px] font-bold bg-[#FFFDF7] border border-[#2D3A4A]">${hIdx === 0 ? '⭐ 交通首選' : hIdx === 1 ? '💰 高CP值' : '🌿 質感度假'}</span>
-                        <a href="${getMapsUrl(h.name + ' ' + h.address)}" target="_blank" rel="noopener noreferrer" class="ext-nav-link absolute bottom-2 right-2 px-2 py-0.5 rounded-full text-[11px] font-bold bg-[#FFFDF7]/95 border border-[#2D3A4A] hover:bg-[#F7D47A]">📷 Google Maps 實景</a>
+                        <div class="absolute bottom-2 right-2 flex items-center gap-1">
+                          <button type="button" data-gmap-embed="${escapeHtml(hQuery)}" class="gmap-inline-btn px-2 py-0.5 rounded-full text-[11px] font-bold bg-[#FFFDF7]/95 border border-[#2D3A4A] hover:bg-[#96CBE3]/50">🗺️ 實景地圖</button>
+                          <a href="${getMapsUrl(hQuery)}" target="_blank" rel="noopener noreferrer" class="ext-nav-link px-2 py-0.5 rounded-full text-[11px] font-bold bg-[#FFFDF7]/95 border border-[#2D3A4A] hover:bg-[#F7D47A]">📷 Google Maps 照片</a>
+                        </div>
                       </div>
                       <div class="p-3 space-y-1.5 text-xs flex-1 flex flex-col justify-between">
                         <div>
@@ -4875,17 +4891,21 @@
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
                   ${foodSet.map(f => {
                     const fb = makeEhonPhotoFallback('美食', f.name);
-                    const url = getMapsUrl(f.name + ' ' + dayCity);
+                    const fQuery = `${f.name} ${dayCity}`.trim();
+                    const url = getMapsUrl(fQuery);
                     return `
-                      <div class="ehon-card-soft overflow-hidden bg-[#FFFDF7] flex items-center gap-2.5 p-2">
-                        <img src="${getSpotPhotoUrl('美食', f.name)}" data-photo-cat="美食" data-photo-query="${escapeHtml(f.name)}" alt="${escapeHtml(f.name)}" class="w-20 h-16 rounded-xl border border-[#2D3A4A] object-cover shrink-0" onerror="this.onerror=null;this.src='${fb}'" />
-                        <div class="min-w-0 flex-1 text-xs space-y-1">
+                      <div class="ehon-card-soft overflow-hidden bg-[#FFFDF7] flex flex-col gap-2">
+                        <div class="h-28 w-full border-b-2 border-[#2D3A4A] overflow-hidden bg-[#B3D9A6]/25 relative media-preview-box">
+                          <img src="${getSpotPhotoUrl('美食', f.name, fQuery)}" loading="lazy" decoding="async" data-photo-cat="美食" data-photo-query="${escapeHtml(fQuery)}" alt="${escapeHtml(f.name)}" class="w-full h-full object-cover" onerror="this.onerror=null;this.src='${fb}'" />
+                          <div class="absolute bottom-1.5 right-1.5 flex items-center gap-1">
+                            <button type="button" data-gmap-embed="${escapeHtml(fQuery)}" class="gmap-inline-btn px-2 py-0.5 rounded-full text-[11px] font-bold bg-[#FFFDF7]/95 border border-[#2D3A4A] hover:bg-[#96CBE3]/50">🗺️ 地圖</button>
+                            <a href="${url}" target="_blank" rel="noopener noreferrer" class="ext-nav-link px-2 py-0.5 rounded-full text-[11px] font-bold bg-[#FFFDF7]/95 border border-[#2D3A4A] hover:bg-[#F7D47A]">📷 Google Maps 照片</a>
+                          </div>
+                        </div>
+                        <div class="px-2.5 pb-2.5 min-w-0 flex-1 text-xs space-y-1">
                           <div class="font-bold truncate">${escapeHtml(f.name)}</div>
                           <div class="text-[11px] text-muted truncate">順遊：${escapeHtml(f.from)}</div>
-                          <div class="flex flex-wrap gap-1.5">
-                            <a href="${url}" target="_blank" rel="noopener noreferrer" class="ext-nav-link inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#F7D47A] border border-[#2D3A4A] text-[11px] font-bold">📍 Google 地圖導航</a>
-                            <a href="${url}" target="_blank" rel="noopener noreferrer" class="ext-nav-link inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-[#FFFDF7] border border-[#2D3A4A] text-[11px] font-bold">📷 Google Maps 實景</a>
-                          </div>
+                          <a href="${url}" target="_blank" rel="noopener noreferrer" class="ext-nav-link inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#F7D47A] border border-[#2D3A4A] text-[11px] font-bold">📍 Google 地圖導航</a>
                         </div>
                       </div>
                     `;
@@ -4909,10 +4929,10 @@
           const role = itemRole(item, activeDayIndex, nDays);
           const draggableAttr = (canDrag && role === 'activity') ? 'draggable="true"' : '';
           const style = getCategoryStyle(item.category);
-          const navQuery = item.mapsQuery || ((item.title || '').replace(/【[^】]*】/g, '').replace(/[（(][^）)]*[）)]/g, '').trim() + ' ' + (item.address || dayCity));
+          const navQuery = item.mapsQuery || buildPlacePhotoQuery(item.category, item.title, item.address || dayCity);
           const mapsHref = getMapsUrl(navQuery);
-          const photoUrl = getSpotPhotoUrl(item.category, item.title);
-          const photoFallback = makeEhonPhotoFallback(item.category, item.title);
+          const photoUrl = getSpotPhotoUrl(item.category, item.title, navQuery);
+          const photoFallback = makeEhonPhotoFallback(item.category, cleanEntityName(item.title) || item.title);
           const isHsrCard = item.category === '交通' && (item.transitMode === 'hsr' || item.transitMode === 'hsr_hybrid' || (item.title || '').includes('台灣高鐵'));
           const isTraCard = item.category === '交通' && (item.transitMode === 'train' || item.transitMode === 'hsr_hybrid' || Boolean(item.traVerifyUrl));
           const stepOptions = Array.isArray(item.scheduleOptions) ? item.scheduleOptions : [];
@@ -4968,10 +4988,13 @@
               <div class="absolute -left-[22px] sm:-left-[24px] top-4 w-3.5 h-3.5 rounded-full ${style.bg} border-2 border-[#2D3A4A]"></div>
               <article class="itinerary-card ehon-card-soft overflow-hidden shadow-[2px_2px_0px_#2D3A4A] bg-[#FFFDF7] transition-all" data-item-id="${item.id}" data-role="${role}" ${draggableAttr}>
                 ${showItemPhoto ? `
-                  <div class="h-36 sm:h-44 w-full border-b-2 border-[#2D3A4A] overflow-hidden bg-[#96CBE3]/20 relative">
-                    <img src="${photoUrl}" data-photo-cat="${escapeHtml(item.category)}" data-photo-query="${escapeHtml(item.title)}" onerror="this.onerror=null;this.src='${photoFallback}';" alt="${escapeHtml(item.title)}" class="w-full h-full object-cover" />
+                  <div class="h-36 sm:h-44 w-full border-b-2 border-[#2D3A4A] overflow-hidden bg-[#96CBE3]/20 relative media-preview-box">
+                    <img src="${photoUrl}" loading="lazy" decoding="async" data-photo-cat="${escapeHtml(item.category)}" data-photo-query="${escapeHtml(navQuery)}" onerror="this.onerror=null;this.src='${photoFallback}';" alt="${escapeHtml(item.title)}" class="w-full h-full object-cover" />
                     <span class="absolute top-2 left-2 px-2.5 py-0.5 rounded-full text-xs font-bold border-2 border-[#2D3A4A] ${style.bg}">${style.icon} ${escapeHtml(item.category)}</span>
-                    <a href="${mapsHref}" target="_blank" rel="noopener noreferrer" class="ext-nav-link absolute bottom-2 right-2 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#FFFDF7]/95 border border-[#2D3A4A] hover:bg-[#F7D47A]">📷 Google Maps 實景</a>
+                    <div class="absolute bottom-2 right-2 flex flex-wrap items-center gap-1">
+                      <button type="button" data-gmap-embed="${escapeHtml(navQuery)}" class="gmap-inline-btn px-2 py-0.5 rounded-full text-[11px] font-bold bg-[#FFFDF7]/95 border border-[#2D3A4A] hover:bg-[#96CBE3]/50">🗺️ 預覽地圖</button>
+                      <a href="${mapsHref}" target="_blank" rel="noopener noreferrer" class="ext-nav-link px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#FFFDF7]/95 border border-[#2D3A4A] hover:bg-[#F7D47A]">📷 Google Maps 實景照片</a>
+                    </div>
                   </div>
                 ` : ''}
                 <div class="p-3.5 space-y-2">
@@ -5070,6 +5093,7 @@
 
         listEl.innerHTML = cardsHtml + aggregatedFoodHtml;
         hydrateRealPhotos(listEl);
+        prefetchSwapGooglePhotos(dayCity);
       }
 
       const TAOYUAN_AIRPORT_HOTELS = [
@@ -5435,12 +5459,17 @@
         const h = getActiveDayHotel();
         document.getElementById('hotelDayBadge').textContent = day ? `Day ${day.dayNumber} 晚間住宿（${day.dateLabel}）` : '當日住宿';
         const hotelBody = document.getElementById('hotelCardBody');
-        const hotelMapsUrl = getMapsUrl(h.name + ' ' + h.address);
+        const dayCityForH = (day && day.cityKey) || state.cityKey || '';
+        const hPhotoQuery = `${h.name} ${h.address || dayCityForH}`.trim();
+        const hotelMapsUrl = getMapsUrl(hPhotoQuery);
         const hotelFb = makeEhonPhotoFallback('飯店', h.name);
         hotelBody.innerHTML = `
-          <div class="h-28 w-full rounded-2xl border-2 border-[#2D3A4A] overflow-hidden bg-[#96CBE3]/25 relative">
-            <img src="${getSpotPhotoUrl('飯店', h.name)}" data-photo-cat="飯店" data-photo-query="${escapeHtml(h.name)}" alt="${escapeHtml(h.name)}" class="w-full h-full object-cover" onerror="this.onerror=null;this.src='${hotelFb}'" />
-            <a href="${hotelMapsUrl}" target="_blank" rel="noopener noreferrer" class="ext-nav-link absolute bottom-2 right-2 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#FFFDF7]/95 border border-[#2D3A4A] hover:bg-[#F7D47A]">📷 Google Maps 實景</a>
+          <div class="h-32 w-full rounded-2xl border-2 border-[#2D3A4A] overflow-hidden bg-[#96CBE3]/25 relative media-preview-box">
+            <img src="${getSpotPhotoUrl('飯店', h.name, hPhotoQuery)}" loading="lazy" decoding="async" data-photo-cat="飯店" data-photo-query="${escapeHtml(hPhotoQuery)}" alt="${escapeHtml(h.name)}" class="w-full h-full object-cover" onerror="this.onerror=null;this.src='${hotelFb}'" />
+            <div class="absolute bottom-2 right-2 flex items-center gap-1">
+              <button type="button" data-gmap-embed="${escapeHtml(hPhotoQuery)}" class="gmap-inline-btn px-2 py-0.5 rounded-full text-[11px] font-bold bg-[#FFFDF7]/95 border border-[#2D3A4A] hover:bg-[#96CBE3]/50">🗺️ 實景地圖</button>
+              <a href="${hotelMapsUrl}" target="_blank" rel="noopener noreferrer" class="ext-nav-link px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#FFFDF7]/95 border border-[#2D3A4A] hover:bg-[#F7D47A]">📷 Google Maps 照片</a>
+            </div>
           </div>
           <div class="font-bold text-sm">${escapeHtml(h.name)}</div>
           <div><strong>📍 地址：</strong>${escapeHtml(h.address)}</div>
@@ -5448,7 +5477,7 @@
           <div class="tabular-nums"><strong>💵 參考：</strong>${escapeHtml(h.cost)}</div>
           ${h.bookingRef ? `<div><strong>🎫 訂房代號：</strong>${escapeHtml(h.bookingRef)}</div>` : ''}
           <p class="bg-[#F0A195]/20 border-2 border-[#2D3A4A] rounded-2xl p-2.5">${escapeHtml(h.highlights)}</p>
-          <a href="${hotelMapsUrl}" target="_blank" rel="noopener noreferrer" class="ext-nav-link inline-block font-bold underline">查看飯店地圖與實景 →</a>
+          <a href="${hotelMapsUrl}" target="_blank" rel="noopener noreferrer" class="ext-nav-link inline-block font-bold underline">查看飯店地圖與實景照片 →</a>
         `;
         hydrateRealPhotos(hotelBody);
 
@@ -6422,11 +6451,12 @@
               for (const k of Object.keys(SPOT_KNOWLEDGE_DB)) { if (rawFeedback.includes(k)) { matched = SPOT_KNOWLEDGE_DB[k]; break; } }
               if (!matched) matched = candidates.find(c => c.title.includes(rawFeedback) || rawFeedback.includes(c.title));
               if (matched) {
-                day.items[idx] = { ...cur, ...matched, time: cur.time, desc: `${matched.desc}（依您的指定替換）` };
+                day.items[idx] = { ...cur, mapsQuery: '', nearbyFood: '', verifyUrl: '', bookUrl: '', ...matched, time: cur.time, desc: `${matched.desc}（依您的指定替換）` };
+                day.items[idx].mapsQuery = matched.mapsQuery || buildPlacePhotoQuery(cur.category, matched.title, matched.address || dayCity);
                 showToast(`已替換為「${matched.title}」！`);
               } else {
                 const customName = rawFeedback.replace(/^(想吃|想喝|想去|換成|改成|改為|改吃|改去|我要)/, '').trim() || rawFeedback;
-                day.items[idx] = { ...cur, title: customName, address: `${dayCity} ${customName}`, mapsQuery: `${customName} ${dayCity}`, nearbyFood: '', desc: `依您的指定需求替換為「${customName}」，可直接點選「📍 導航」查看 Google Maps 位置與評價。` };
+                day.items[idx] = { ...cur, title: customName, address: `${dayCity} ${customName}`, mapsQuery: `${customName} ${dayCity}`, nearbyFood: '', verifyUrl: '', bookUrl: '', desc: `依您的指定需求替換為「${customName}」，可直接點選「📍 導航」查看 Google Maps 位置與評價。` };
                 showToast(`已替換為您指定的「${customName}」！`);
               }
             } else if (candidates.length > 0) {
@@ -6434,7 +6464,8 @@
               const listToCycle = others.length > 0 ? others : candidates;
               const nextIdx = (cur._altCursor || 0) % listToCycle.length;
               const chosen = listToCycle[nextIdx];
-              day.items[idx] = { ...cur, ...chosen, time: cur.time, _altCursor: nextIdx + 1, desc: `${chosen.desc}（已自動輪替推薦，可再點「換掉」繼續換）` };
+              day.items[idx] = { ...cur, mapsQuery: '', nearbyFood: '', verifyUrl: '', bookUrl: '', ...chosen, time: cur.time, _altCursor: nextIdx + 1, desc: `${chosen.desc}（已自動輪替推薦，可再點「換掉」繼續換）` };
+              day.items[idx].mapsQuery = chosen.mapsQuery || buildPlacePhotoQuery(cur.category, chosen.title, chosen.address || dayCity);
               showToast(`已輪替為「${chosen.title}」（${nextIdx + 1}/${listToCycle.length}）`);
             }
           }
@@ -6444,7 +6475,7 @@
             const catAlts = (pool.alternatives && pool.alternatives[it.category]) || [];
             if (catAlts.length && (it.category === '景點' || it.category === '餐廳')) {
               const nextIt = catAlts[mIdx % catAlts.length];
-              return { ...it, ...nextIt, time: it.time };
+              return { ...it, mapsQuery: '', nearbyFood: '', ...nextIt, time: it.time };
             }
             return it;
           });
@@ -6577,6 +6608,13 @@
         } else if (mode === 'budget') {
           titleEl.textContent = '設定總預算';
           formEl.innerHTML = `<div><label class="block text-xs font-bold mb-1">預算 (NT$)</label><input id="metaBudget" type="number" min="0" class="ehon-input w-full px-3 py-2 tabular-nums" value="${Number(state.budgetTWD) || 0}" required /></div><div class="flex justify-end gap-2 pt-2"><button type="button" class="close-meta ehon-pill px-4 py-2 bg-[#FFFDF7] text-xs font-bold">取消</button><button type="submit" class="ehon-pill ehon-btn-raised px-4 py-2 bg-[#B3D9A6] text-xs font-bold">儲存</button></div>`;
+        } else if (mode === 'gmapsKey') {
+          titleEl.textContent = '🔑 Google Maps Places API Key';
+          formEl.innerHTML = `
+            <p class="text-xs text-muted leading-relaxed">輸入您的 Google Cloud「Places API (New)」金鑰（僅存於本機瀏覽器），即可為所有景點、餐廳、美食與飯店直接載入 Google Maps 實拍照片並快取加速。</p>
+            <div><label class="block text-xs font-bold mb-1">API Key（留空則清空金鑰）</label><input id="metaGmapsApiKey" type="text" placeholder="AIza..." class="ehon-input w-full px-3 py-2 text-xs font-mono" value="${escapeHtml(getGmapsApiKey())}" /></div>
+            <div class="flex justify-end gap-2 pt-2"><button type="button" class="close-meta ehon-pill px-4 py-2 bg-[#FFFDF7] text-xs font-bold">取消</button><button type="submit" class="ehon-pill ehon-btn-raised px-4 py-2 bg-[#B3D9A6] text-xs font-bold">儲存並載入照片</button></div>
+          `;
         }
         openModalById('metaModal');
       }
@@ -6681,6 +6719,16 @@
           prefs.reduceMotion = !prefs.reduceMotion;
           savePrefs(); applyVisualPrefs();
           showToast(prefs.reduceMotion ? '已減少動畫效果' : '已恢復繪本動態效果');
+        });
+        document.getElementById('btnGmapsApiKey').addEventListener('click', () => openMetaModal('gmapsKey'));
+        document.addEventListener('click', (e) => {
+          const btn = e.target.closest('.gmap-inline-btn');
+          if (!btn) return;
+          const q = btn.getAttribute('data-gmap-embed') || '';
+          const box = btn.closest('.media-preview-box');
+          if (!box || !q) return;
+          const iframeUrl = getGoogleMapsEmbedUrl(q);
+          box.innerHTML = `<iframe src="${iframeUrl}" title="Google Maps" class="w-full h-full border-0" loading="eager" referrerpolicy="no-referrer-when-downgrade"></iframe>`;
         });
 
         // 分享連結 / ICS / 列印 PDF
@@ -7193,6 +7241,15 @@
             state.days[activeDayIndex].dateLabel = document.getElementById('metaDayDate').value.trim();
           } else if (currentMetaMode === 'budget') {
             state.budgetTWD = Math.max(0, Number(document.getElementById('metaBudget').value) || 0);
+          } else if (currentMetaMode === 'gmapsKey') {
+            const kVal = (document.getElementById('metaGmapsApiKey').value || '').trim();
+            try {
+              if (kVal) localStorage.setItem(GMAPS_KEY_STORAGE, kVal);
+              else localStorage.removeItem(GMAPS_KEY_STORAGE);
+            } catch (err) {}
+            saveState(); renderAll(false); closeModalById('metaModal');
+            showToast(kVal ? '已儲存 Google Maps API Key，正在載入實拍照片…' : '已清除 Google Maps API Key');
+            return;
           }
           saveState(); renderAll(false); closeModalById('metaModal'); showToast('已儲存變更');
         });
