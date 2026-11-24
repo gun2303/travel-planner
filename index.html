@@ -369,10 +369,10 @@
           <div class="min-w-0">
             <label for="transportPrefSelect" class="block text-xs font-bold mb-1.5">🚆 主要交通</label>
             <select id="transportPrefSelect" class="ehon-input w-full h-[42px] px-3 py-1.5 text-sm font-bold">
-              <option value="auto">依需求自動判斷</option>
-              <option value="hsr">高鐵</option>
-              <option value="train">火車</option>
-              <option value="drive">開車</option>
+              <option value="auto">依需求自動判斷（大眾運輸智慧推薦）</option>
+              <option value="hsr">高鐵 / 高鐵＋轉乘</option>
+              <option value="train">台鐵火車</option>
+              <option value="drive">自行開車自駕</option>
               <option value="flight">飛機</option>
             </select>
           </div>
@@ -1862,10 +1862,122 @@
           return '🚇 轉運接駁：高鐵台中站可直接轉乘「台中捷運綠線」往文心森林公園／市政府／松竹，或「台鐵新烏日站」搭區間車 10 分鐘進台中火車站。';
         }
         if (d.includes('花蓮')) {
-          return '🚌 轉運接駁：台鐵花蓮站前站出口可轉乘「花蓮客運／台灣好行太魯閣線」或站前租借機車／汽車展開行程。';
+          return '🚌 轉運接駁：台鐵花蓮站前站出口可轉乘「花蓮客運／台灣好行太魯閣線／310 縱谷花蓮線」，或站前租借機車／汽車展開行程。';
+        }
+        if (d.includes('宜蘭')) {
+          return '🚌 轉運接駁：葛瑪蘭／首都客運及台鐵皆停靠宜蘭／羅東／礁溪轉運站，可轉乘「台灣好行冬山河線／礁溪線」、「宜蘭勁好行」市區公車或站前租借機車。';
+        }
+        if (d.includes('台東') || d.includes('臺東')) {
+          return '🚌 轉運接駁：台鐵台東站出口可轉乘「台灣好行東部海岸線／縱谷鹿野線」、「普悠瑪客運市區線」前往市區與海濱公園，或於站前租借機車／汽車。';
         }
         return '🚇 轉運接駁：抵達車站後可轉乘當地捷運、輕軌、市區公車或計程車前往首站景點。';
       }
+
+      const TRA_VERIFY_URL = 'https://www.railway.gov.tw/tra-tip-web/tip/tip001/tip112/gobytime';
+      const TRA_BOOK_URL = 'https://www.railway.gov.tw/tra-tip-web/tip/tip001/tip121/query';
+
+      // 台鐵官方實測時刻表（EMU3000 新自強 / 普悠瑪 / 太魯閣主要快車）
+      const TRA_EAST_SCHEDULES = {
+        '南港-花蓮': {
+          fare: 558,
+          trains: [
+            { type: '自強(3000)', no: '406', dep: '06:41', arr: '08:57', durMins: 136 },
+            { type: '自強(3000)', no: '410', dep: '08:06', arr: '10:18', durMins: 132 },
+            { type: '自強(3000)', no: '422', dep: '10:40', arr: '13:01', durMins: 141 },
+            { type: '太魯閣', no: '218', dep: '11:04', arr: '13:11', durMins: 127 },
+            { type: '普悠瑪', no: '420', dep: '11:46', arr: '13:55', durMins: 129 },
+            { type: '普悠瑪', no: '228', dep: '13:21', arr: '15:45', durMins: 144 },
+            { type: '自強(3000)', no: '428', dep: '14:03', arr: '16:21', durMins: 138 },
+            { type: '自強(3000)', no: '432', dep: '15:11', arr: '17:26', durMins: 135 },
+            { type: '普悠瑪', no: '236', dep: '15:54', arr: '18:01', durMins: 127 },
+            { type: '自強(3000)', no: '434', dep: '16:13', arr: '18:26', durMins: 133 }
+          ]
+        },
+        '花蓮-南港': {
+          fare: 558,
+          trains: [
+            { type: '自強(3000)', no: '207', dep: '07:30', arr: '09:55', durMins: 145 },
+            { type: '太魯閣', no: '217', dep: '11:02', arr: '13:09', durMins: 127 },
+            { type: '普悠瑪', no: '417', dep: '12:49', arr: '14:55', durMins: 126 },
+            { type: '自強(3000)', no: '223', dep: '14:51', arr: '17:01', durMins: 130 },
+            { type: '自強(3000)', no: '423', dep: '15:25', arr: '17:40', durMins: 135 },
+            { type: '太魯閣', no: '231', dep: '16:45', arr: '18:54', durMins: 129 },
+            { type: '自強(3000)', no: '431', dep: '17:23', arr: '19:36', durMins: 133 },
+            { type: '普悠瑪', no: '237', dep: '19:38', arr: '21:49', durMins: 131 },
+            { type: '自強(3000)', no: '445', dep: '20:36', arr: '22:55', durMins: 139 }
+          ]
+        },
+        '南港-宜蘭': {
+          fare: 279,
+          trains: [
+            { type: '自強(3000)', no: '406', dep: '06:41', arr: '07:50', durMins: 69 },
+            { type: '自強(3000)', no: '410', dep: '08:06', arr: '09:11', durMins: 65 },
+            { type: '自強(3000)', no: '422', dep: '10:40', arr: '11:54', durMins: 74 },
+            { type: '太魯閣', no: '218', dep: '11:04', arr: '12:04', durMins: 60 },
+            { type: '普悠瑪', no: '420', dep: '11:46', arr: '12:49', durMins: 63 },
+            { type: '普悠瑪', no: '228', dep: '13:21', arr: '14:32', durMins: 71 },
+            { type: '自強(3000)', no: '428', dep: '14:03', arr: '15:10', durMins: 67 }
+          ]
+        },
+        '宜蘭-南港': {
+          fare: 279,
+          trains: [
+            { type: '自強(3000)', no: '407', dep: '10:08', arr: '11:15', durMins: 67 },
+            { type: '太魯閣', no: '217', dep: '12:08', arr: '13:09', durMins: 61 },
+            { type: '普悠瑪', no: '417', dep: '13:55', arr: '14:55', durMins: 60 },
+            { type: '自強(3000)', no: '423', dep: '16:33', arr: '17:40', durMins: 67 },
+            { type: '太魯閣', no: '231', dep: '17:51', arr: '18:54', durMins: 63 },
+            { type: '自強(3000)', no: '431', dep: '18:30', arr: '19:36', durMins: 66 },
+            { type: '普悠瑪', no: '237', dep: '20:48', arr: '21:49', durMins: 61 }
+          ]
+        },
+        '台南-台東': {
+          fare: 614,
+          trains: [
+            { type: '自強(3000)', no: '301', dep: '06:30', arr: '09:19', durMins: 169 },
+            { type: '自強(3000)', no: '371', dep: '08:49', arr: '11:32', durMins: 163 },
+            { type: '自強(3000)', no: '161', dep: '09:54', arr: '12:15', durMins: 141 },
+            { type: '自強(3000)', no: '165', dep: '17:24', arr: '19:53', durMins: 149 },
+            { type: '自強(3000)', no: '167', dep: '19:36', arr: '22:30', durMins: 174 }
+          ]
+        },
+        '台東-台南': {
+          fare: 614,
+          trains: [
+            { type: '自強(3000)', no: '162', dep: '05:52', arr: '08:26', durMins: 154 },
+            { type: '自強(3000)', no: '164', dep: '07:16', arr: '10:22', durMins: 186 },
+            { type: '自強(3000)', no: '168', dep: '16:00', arr: '18:22', durMins: 142 },
+            { type: '自強(3000)', no: '386', dep: '17:30', arr: '20:09', durMins: 159 },
+            { type: '自強(3000)', no: '324', dep: '17:52', arr: '20:29', durMins: 157 }
+          ]
+        },
+        '新左營-台東': {
+          fare: 509,
+          trains: [
+            { type: '自強(3000)', no: '301', dep: '07:00', arr: '09:19', durMins: 139 },
+            { type: '自強(3000)', no: '415', dep: '07:37', arr: '09:36', durMins: 119 },
+            { type: '自強(3000)', no: '371', dep: '09:17', arr: '11:32', durMins: 135 },
+            { type: '自強(3000)', no: '161', dep: '10:20', arr: '12:15', durMins: 115 },
+            { type: '自強(3000)', no: '423', dep: '10:46', arr: '13:17', durMins: 151 },
+            { type: '自強(3000)', no: '431', dep: '12:42', arr: '15:06', durMins: 144 },
+            { type: '自強(3000)', no: '441', dep: '14:38', arr: '17:29', durMins: 171 },
+            { type: '自強(3000)', no: '445', dep: '15:54', arr: '18:32', durMins: 158 }
+          ]
+        },
+        '台東-新左營': {
+          fare: 509,
+          trains: [
+            { type: '自強(3000)', no: '304', dep: '10:14', arr: '12:50', durMins: 156 },
+            { type: '自強(3000)', no: '410', dep: '12:35', arr: '15:01', durMins: 146 },
+            { type: '自強(3000)', no: '314', dep: '13:41', arr: '15:50', durMins: 129 },
+            { type: '自強(3000)', no: '422', dep: '15:09', arr: '17:10', durMins: 121 },
+            { type: '自強(3000)', no: '168', dep: '16:00', arr: '17:56', durMins: 116 },
+            { type: '自強(3000)', no: '386', dep: '17:30', arr: '19:42', durMins: 132 },
+            { type: '自強(3000)', no: '324', dep: '17:52', arr: '19:57', durMins: 125 },
+            { type: '自強(3000)', no: '428', dep: '18:33', arr: '20:59', durMins: 146 }
+          ]
+        }
+      };
 
       function toHsrStationName(city) {
         const c = String(city || '').trim();
@@ -1911,6 +2023,346 @@
           type: 'tot-1'
         });
         return `${THSR_QUERY_HELPER_BASE}?${params.toString()}`;
+      }
+
+      function buildEastHybridItem(origin, dest, mode, isReturn) {
+        const from = isReturn ? dest : (origin || '台南');
+        const to = isReturn ? (origin || '台南') : dest;
+        const hsrOriginSt = toHsrStationName(origin || '台南');
+        const originHasHsr = THSR_ST_ORDER.includes(hsrOriginSt) && !['台北', '南港', '板橋'].includes(hsrOriginSt);
+        const hsrDate = buildDateCtx
+          ? (isReturn ? buildDateCtx.ret : buildDateCtx.dep)
+          : ((typeof state !== 'undefined' && state && (isReturn ? state.returnDate : state.departDate)) || '');
+
+        const buildHsrToTra = (stA, stB, traKey, minGap, minDepMins, maxDepMins) => {
+          const hsrList = findRealThsrTrains(stA, stB, hsrDate);
+          const traObj = TRA_EAST_SCHEDULES[traKey];
+          if (!hsrList.length || !traObj) return [];
+          const out = [];
+          const usedTra = new Set();
+          for (const h of hsrList) {
+            if (h.depMins < minDepMins || h.depMins > maxDepMins) continue;
+            const tra = traObj.trains.find(t => {
+              const td = parseHHMM(t.dep);
+              return td >= h.arrMins + minGap && td <= h.arrMins + 65 && !usedTra.has(t.no);
+            });
+            if (!tra) continue;
+            usedTra.add(tra.no);
+            const tDepM = parseHHMM(tra.dep);
+            const tArrM = parseHHMM(tra.arr, tDepM);
+            const totalM = tArrM - h.depMins;
+            out.push({
+              label: `高鐵 ${h.no} (${h.dep}→${stB}${h.arr}) 轉 台鐵${tra.no} ${tra.type} (${tra.dep}→${tra.arr}，共 ${fmtDur(totalM)})`,
+              time: fmtRange(h.depMins, tArrM),
+              arrMins: tArrM,
+              durMins: totalM,
+              hsrFrom: stA,
+              hsrTo: stB,
+              hsrDepTime: h.dep
+            });
+            if (out.length >= 4) break;
+          }
+          return out;
+        };
+
+        const buildTraToHsr = (traKey, stA, stB, minGap, minTraDepMins, maxTraDepMins) => {
+          const traObj = TRA_EAST_SCHEDULES[traKey];
+          const hsrList = findRealThsrTrains(stA, stB, hsrDate);
+          if (!traObj || !hsrList.length) return [];
+          const out = [];
+          for (const tra of traObj.trains) {
+            const tDepM = parseHHMM(tra.dep);
+            if (tDepM < minTraDepMins || tDepM > maxTraDepMins) continue;
+            const tArrM = parseHHMM(tra.arr, tDepM);
+            const h = hsrList.find(x => x.depMins >= tArrM + minGap && x.depMins <= tArrM + 65);
+            if (!h) continue;
+            const totalM = h.arrMins - tDepM;
+            out.push({
+              label: `台鐵${tra.no} ${tra.type} (${tra.dep}→${stA}${tra.arr}) 轉 高鐵 ${h.no} (${h.dep}→${stB}${h.arr}，共 ${fmtDur(totalM)})`,
+              time: fmtRange(tDepM, h.arrMins),
+              arrMins: h.arrMins,
+              durMins: totalM,
+              hsrFrom: stA,
+              hsrTo: stB,
+              hsrDepTime: h.dep
+            });
+            if (out.length >= 4) break;
+          }
+          return out;
+        };
+
+        // 1. 台南（或中南部高鐵站）⇄ 宜蘭：最佳「高鐵北上＋國道客運」，假日防塞備案「南港轉台鐵」
+        if (originHasHsr && (dest.includes('宜蘭')) && mode !== 'train') {
+          const busDur = 55;
+          const transferPad = 15;
+          if (!isReturn) {
+            const hsrTp = findRealThsrTrains(hsrOriginSt, '台北', hsrDate)
+              .filter(t => t.depMins >= 6 * 60 && t.depMins <= 11 * 60 && (t.durMins <= 112))
+              .slice(0, 3);
+            const opts = hsrTp.map(h => {
+              const busDep = h.arrMins + transferPad;
+              const arrEst = busDep + busDur;
+              const tot = arrEst - h.depMins;
+              return {
+                label: `高鐵 ${h.no} (${h.dep}→台北${h.arr}) 轉 葛瑪蘭/首都客運 (約${fmtHM(busDep)}發→${fmtHM(arrEst)}抵宜蘭，共${fmtDur(tot)})`,
+                time: fmtRange(h.depMins, arrEst),
+                arrMins: arrEst,
+                durMins: tot,
+                hsrFrom: hsrOriginSt,
+                hsrTo: '台北',
+                hsrDepTime: h.dep
+              };
+            });
+            const railBackups = buildHsrToTra(hsrOriginSt, '南港', '南港-宜蘭', 18, 6 * 60 + 30, 11 * 60 + 30).slice(0, 2)
+              .map(o => ({ ...o, label: `【假日避國五塞車】${o.label}` }));
+            const allOpts = [...opts, ...railBackups];
+            const defOpt = allOpts[1] || allOpts[0];
+            const fareObj = THSR_FARES_FULL[`${hsrOriginSt}-台北`];
+            const hsrCost = fareObj ? `NT$ ${fareObj.std}` : '依官網';
+            return {
+              category: '交通',
+              time: defOpt ? defOpt.time : '07:13 - 10:05',
+              title: `最佳大眾運輸：高鐵(${hsrOriginSt}→台北) ＋ 國道客運(→宜蘭)`,
+              address: `高鐵${hsrOriginSt}站 → 高鐵台北站(台北轉運站/市府轉運站) → 宜蘭轉運站`,
+              mapsQuery: '宜蘭轉運站',
+              hours: '總耗時約 2.5 ～ 3 小時（高鐵約 1 小時 45 分 ＋ 客運約 50～60 分）',
+              cost: `高鐵標準 ${hsrCost} ＋ 客運約 NT$ 140～155（南港轉台鐵 NT$ 279）`,
+              transport: '葛瑪蘭客運(台北轉運站)／首都客運(市府轉運站) 10～15 分一班・假日可改南港轉台鐵',
+              mustVisit: false,
+              transitMode: 'hsr_hybrid',
+              scheduleOptions: allOpts,
+              transferInfo: getDomesticTransferInfo('宜蘭'),
+              hsrFrom: (defOpt && defOpt.hsrFrom) || hsrOriginSt,
+              hsrTo: (defOpt && defOpt.hsrTo) || '台北',
+              hsrDepTime: defOpt ? defOpt.hsrDepTime : '07:13',
+              hsrIsReturn: false,
+              verifyUrl: buildThsrQueryUrl(hsrOriginSt, '台北', hsrDate, defOpt ? defOpt.hsrDepTime : '07:13'),
+              bookUrl: THSR_BOOK_URL,
+              bookPortalUrl: THSR_BOOK_PORTAL_URL,
+              traVerifyUrl: TRA_VERIFY_URL,
+              traBookUrl: TRA_BOOK_URL,
+              traVerifyLabel: '🚆 驗證台鐵官方時刻表（南港→宜蘭假日備案）',
+              desc: `走北迴線比繞南迴快非常多！從${hsrOriginSt}搭高鐵北上台北轉乘葛瑪蘭／首都客運僅 10～15 分一班且不用搶火車票；若遇假日國五塞車，下方亦提供「高鐵南港站同站轉乘台鐵太魯閣／普悠瑪／新自強」備案班次。`
+            };
+          } else {
+            const hsrRetTp = findRealThsrTrains('台北', hsrOriginSt, hsrDate)
+              .filter(t => t.depMins >= 15 * 60 && t.depMins <= 20 * 60 && t.durMins <= 112)
+              .slice(0, 3);
+            const opts = hsrRetTp.map(h => {
+              const busDep = h.depMins - transferPad - busDur;
+              const tot = h.arrMins - busDep;
+              return {
+                label: `客運 (${fmtHM(busDep)}宜蘭→台北) 轉 高鐵 ${h.no} (${h.dep}→${hsrOriginSt}${h.arr}，共${fmtDur(tot)})`,
+                time: fmtRange(busDep, h.arrMins),
+                arrMins: h.arrMins,
+                durMins: tot,
+                hsrFrom: '台北',
+                hsrTo: hsrOriginSt,
+                hsrDepTime: h.dep
+              };
+            });
+            const railBackups = buildTraToHsr('宜蘭-南港', '南港', hsrOriginSt, 18, 13 * 60 + 30, 19 * 60).slice(0, 2)
+              .map(o => ({ ...o, label: `【假日避國五塞車】${o.label}` }));
+            const allOpts = [...opts, ...railBackups];
+            const defOpt = allOpts[1] || allOpts[0];
+            const fareObj = THSR_FARES_FULL[`台北-${hsrOriginSt}`];
+            const hsrCost = fareObj ? `NT$ ${fareObj.std}` : '依官網';
+            return {
+              category: '交通',
+              time: defOpt ? defOpt.time : '15:50 - 18:42',
+              title: `最佳返程：國道客運(宜蘭→台北) ＋ 高鐵(→${hsrOriginSt})`,
+              address: `宜蘭轉運站 → 台北轉運站/市府轉運站 → 高鐵台北站 → 高鐵${hsrOriginSt}站`,
+              mapsQuery: `高鐵${hsrOriginSt}站`,
+              hours: '總耗時約 2.5 ～ 3 小時（客運約 50～60 分 ＋ 高鐵約 1 小時 45 分）',
+              cost: `客運約 NT$ 140～155 ＋ 高鐵標準 ${hsrCost}（南港轉台鐵 NT$ 279）`,
+              transport: '葛瑪蘭／首都客運密集成班回台北轉高鐵；假日塞車可改台鐵至南港站同站轉高鐵',
+              mustVisit: false,
+              transitMode: 'hsr_hybrid',
+              scheduleOptions: allOpts,
+              transferInfo: getDomesticTransferInfo(origin || '台南'),
+              hsrFrom: (defOpt && defOpt.hsrFrom) || '台北',
+              hsrTo: (defOpt && defOpt.hsrTo) || hsrOriginSt,
+              hsrDepTime: defOpt ? defOpt.hsrDepTime : '17:00',
+              hsrIsReturn: true,
+              verifyUrl: buildThsrQueryUrl('台北', hsrOriginSt, hsrDate, defOpt ? defOpt.hsrDepTime : '17:00'),
+              bookUrl: THSR_BOOK_URL,
+              bookPortalUrl: THSR_BOOK_PORTAL_URL,
+              traVerifyUrl: TRA_VERIFY_URL,
+              traBookUrl: TRA_BOOK_URL,
+              traVerifyLabel: '🚆 驗證台鐵官方時刻表（宜蘭→南港假日備案）',
+              desc: `從宜蘭搭葛瑪蘭／首都客運回台北轉乘高鐵南下最快速彈性；若假日國道五號壅塞，建議點選下方「宜蘭→南港台鐵對號車」至高鐵南港站同站轉乘回${hsrOriginSt}。`
+            };
+          }
+        }
+
+        // 2. 台南（或中南部高鐵站）⇄ 花蓮：最佳「高鐵北上至南港 ＋ 同站無縫轉乘台鐵新自強/普悠瑪/太魯閣」
+        if (originHasHsr && dest.includes('花蓮') && mode !== 'train') {
+          const fareObj = THSR_FARES_FULL[`${hsrOriginSt}-南港`];
+          const hsrCost = fareObj ? `NT$ ${fareObj.std}` : '依官網';
+          if (!isReturn) {
+            const opts = buildHsrToTra(hsrOriginSt, '南港', '南港-花蓮', 20, 6 * 60, 12 * 60);
+            if (hsrOriginSt === '台南') {
+              opts.push({
+                label: '【南迴直達參考】台鐵 301 新自強(3000) 台南 06:30 → 花蓮 10:59（4小時29分，每日僅此早班快車）',
+                time: '06:30 - 10:59',
+                arrMins: 10 * 60 + 59,
+                durMins: 269,
+                hsrFrom: hsrOriginSt,
+                hsrTo: '南港',
+                hsrDepTime: '07:13'
+              });
+            }
+            const defOpt = opts[0];
+            return {
+              category: '交通',
+              time: defOpt ? defOpt.time : '08:13 - 13:01',
+              title: `最佳大眾運輸：高鐵(${hsrOriginSt}→南港) ＋ 台鐵北迴線(→花蓮)`,
+              address: `高鐵${hsrOriginSt}站 → 高鐵南港站(同站轉乘) → 台鐵南港站 → 台鐵花蓮站`,
+              mapsQuery: '花蓮火車站',
+              hours: '總耗時約 4 ～ 4.5 小時（高鐵約 1 小時 55 分 ＋ 台鐵約 2 小時 10 分含轉乘）',
+              cost: `高鐵南港標準 ${hsrCost} ＋ 台鐵自強(3000)/太魯閣/普悠瑪 NT$ 558`,
+              transport: '強烈推薦在「高鐵南港站」同站無縫轉乘・比台北站動線單純再省約 10 分鐘',
+              mustVisit: false,
+              transitMode: 'hsr_hybrid',
+              scheduleOptions: opts,
+              transferInfo: getDomesticTransferInfo('花蓮'),
+              hsrFrom: hsrOriginSt,
+              hsrTo: '南港',
+              hsrDepTime: defOpt ? defOpt.hsrDepTime : '08:13',
+              hsrIsReturn: false,
+              verifyUrl: buildThsrQueryUrl(hsrOriginSt, '南港', hsrDate, defOpt ? defOpt.hsrDepTime : '08:13'),
+              bookUrl: THSR_BOOK_URL,
+              bookPortalUrl: THSR_BOOK_PORTAL_URL,
+              traVerifyUrl: TRA_VERIFY_URL,
+              traBookUrl: TRA_BOOK_URL,
+              traVerifyLabel: '🚆 驗證台鐵官方時刻表（南港→花蓮）',
+              desc: `從${hsrOriginSt}搭高鐵北上直達終點「高鐵南港站」同站無縫轉乘台鐵 EMU3000 新自強／太魯閣／普悠瑪號！雖然台南有南迴直達花蓮台鐵（約 4.5 小時，但快車一天僅早班 301 一班），經南港轉北迴線不僅全天班次多、也比在台北車站轉乘省下約 10 分鐘市區行車時間。`
+            };
+          } else {
+            const opts = buildTraToHsr('花蓮-南港', '南港', hsrOriginSt, 22, 12 * 60 + 30, 19 * 60);
+            if (hsrOriginSt === '台南') {
+              opts.push({
+                label: '【南迴直達參考】台鐵 324 新自強(3000) 花蓮 16:01 → 台南 20:29（4小時28分，每日僅此午後快車）',
+                time: '16:01 - 20:29',
+                arrMins: 20 * 60 + 29,
+                durMins: 268,
+                hsrFrom: '南港',
+                hsrTo: hsrOriginSt,
+                hsrDepTime: '18:00'
+              });
+            }
+            const defOpt = opts[0];
+            return {
+              category: '交通',
+              time: defOpt ? defOpt.time : '14:51 - 19:33',
+              title: `最佳返程：台鐵北迴線(花蓮→南港) ＋ 高鐵(→${hsrOriginSt})`,
+              address: `台鐵花蓮站 → 台鐵南港站(同站轉乘) → 高鐵南港站 → 高鐵${hsrOriginSt}站`,
+              mapsQuery: `高鐵${hsrOriginSt}站`,
+              hours: '總耗時約 4 ～ 4.5 小時（台鐵約 2 小時 10 分 ＋ 高鐵約 1 小時 55 分含轉乘）',
+              cost: `台鐵自強(3000)/太魯閣/普悠瑪 NT$ 558 ＋ 高鐵南港標準 ${hsrCost}`,
+              transport: '高鐵南港站為始發站座位好選，同站無縫轉高鐵南下超順暢',
+              mustVisit: false,
+              transitMode: 'hsr_hybrid',
+              scheduleOptions: opts,
+              transferInfo: getDomesticTransferInfo(origin || '台南'),
+              hsrFrom: '南港',
+              hsrTo: hsrOriginSt,
+              hsrDepTime: defOpt ? defOpt.hsrDepTime : '17:35',
+              hsrIsReturn: true,
+              verifyUrl: buildThsrQueryUrl('南港', hsrOriginSt, hsrDate, defOpt ? defOpt.hsrDepTime : '17:35'),
+              bookUrl: THSR_BOOK_URL,
+              bookPortalUrl: THSR_BOOK_PORTAL_URL,
+              traVerifyUrl: TRA_VERIFY_URL,
+              traBookUrl: TRA_BOOK_URL,
+              traVerifyLabel: '🚆 驗證台鐵官方時刻表（花蓮→南港）',
+              desc: `從花蓮搭台鐵北迴線 EMU3000 新自強／太魯閣／普悠瑪至南港站，直接同站轉乘高鐵回${hsrOriginSt}；全天班次銜接密度遠高於南迴直達車。`
+            };
+          }
+        }
+
+        // 3. 台南 ⇄ 台東：首選「台鐵南迴線直達」，備選「高鐵台南→左營 ＋ 新左營同站轉台鐵南迴線」
+        if (hsrOriginSt === '台南' && (dest.includes('台東') || dest.includes('臺東'))) {
+          if (!isReturn) {
+            const directOpts = TRA_EAST_SCHEDULES['台南-台東'].trains.slice(0, 4).map(t => ({
+              label: `【首選直達】台鐵 ${t.no} ${t.type} (台南 ${t.dep} → 台東 ${t.arr}，${fmtDur(t.durMins)})`,
+              time: `${t.dep} - ${t.arr}`,
+              arrMins: parseHHMM(t.arr, parseHHMM(t.dep)),
+              durMins: t.durMins,
+              hsrFrom: '台南',
+              hsrTo: '左營',
+              hsrDepTime: t.dep
+            }));
+            const zuoyingBackups = buildHsrToTra('台南', '左營', '新左營-台東', 18, 6 * 60 + 30, 12 * 60 + 30).slice(0, 2)
+              .map(o => ({ ...o, label: `【直達沒票備選】${o.label}` }));
+            const allOpts = [...directOpts, ...zuoyingBackups];
+            const defOpt = directOpts[1] || directOpts[0]; // 371 (08:49->11:32) or 161 (09:54->12:15)
+            return {
+              category: '交通',
+              time: defOpt.time,
+              title: '最佳大眾運輸：台鐵南迴線 EMU3000 直達（臺南 → 臺東）',
+              address: '臺南火車站 → 台鐵南迴線直達 → 臺東火車站（直達無票可改高鐵左營轉新左營）',
+              mapsQuery: '臺東火車站',
+              hours: '約 2 小時 21 分 ～ 2 小時 54 分（與高鐵轉乘總時間幾乎相當且免搬行李）',
+              cost: '台鐵直達 NT$ 614（左營轉乘：高鐵標準 NT$ 140 ＋ 台鐵 NT$ 509）',
+              transport: '首選臺南站直達 EMU3000 新自強號免轉乘；直達完售時可改「高鐵台南→左營＋新左營轉台鐵」',
+              mustVisit: false,
+              transitMode: 'hsr_hybrid',
+              scheduleOptions: allOpts,
+              transferInfo: getDomesticTransferInfo('台東'),
+              hsrFrom: '台南',
+              hsrTo: '左營',
+              hsrDepTime: '08:00',
+              hsrIsReturn: false,
+              verifyUrl: buildThsrQueryUrl('台南', '左營', hsrDate, '08:00'),
+              bookUrl: THSR_BOOK_URL,
+              bookPortalUrl: THSR_BOOK_PORTAL_URL,
+              traVerifyUrl: TRA_VERIFY_URL,
+              traBookUrl: TRA_BOOK_URL,
+              traVerifyLabel: '🚆 驗證台鐵官方時刻表（臺南/新左營→臺東）',
+              desc: '台東位於南迴線上，從台南搭台鐵 EMU3000 新自強直達僅約 2.5 小時，加上市區往高鐵站與轉乘時間其實與轉高鐵相當，且免去搬行李換車最省事！若直達車沒票，可改選下方「高鐵至左營同站轉新左營台鐵」（新左營發車每日 13 班、更好買分段票）。'
+            };
+          } else {
+            const directOpts = TRA_EAST_SCHEDULES['台東-台南'].trains.filter(t => parseHHMM(t.dep) >= 15 * 60).map(t => ({
+              label: `【首選直達】台鐵 ${t.no} ${t.type} (台東 ${t.dep} → 台南 ${t.arr}，${fmtDur(t.durMins)})`,
+              time: `${t.dep} - ${t.arr}`,
+              arrMins: parseHHMM(t.arr, parseHHMM(t.dep)),
+              durMins: t.durMins,
+              hsrFrom: '左營',
+              hsrTo: '台南',
+              hsrDepTime: '18:15'
+            }));
+            const zuoyingBackups = buildTraToHsr('台東-新左營', '左營', '台南', 18, 13 * 60, 19 * 60).slice(0, 3)
+              .map(o => ({ ...o, label: `【直達沒票備選】${o.label}` }));
+            const allOpts = [...directOpts, ...zuoyingBackups];
+            const defOpt = directOpts[0] || allOpts[0];
+            return {
+              category: '交通',
+              time: defOpt ? defOpt.time : '16:00 - 18:22',
+              title: '最佳返程：台鐵南迴線直達（臺東 → 臺南）｜備選左營轉高鐵',
+              address: '臺東火車站 → 台鐵南迴線直達 → 臺南火車站（或至新左營站轉高鐵回台南）',
+              mapsQuery: '臺南火車站',
+              hours: '約 2 小時 22 分 ～ 2 小時 39 分',
+              cost: '台鐵直達 NT$ 614（左營轉乘：台鐵 NT$ 509 ＋ 高鐵標準 NT$ 140）',
+              transport: '首選 168 / 386 / 324 次直達台南站免搬行李；沒票可改搭至新左營同站轉高鐵',
+              mustVisit: false,
+              transitMode: 'hsr_hybrid',
+              scheduleOptions: allOpts,
+              transferInfo: getDomesticTransferInfo('台南'),
+              hsrFrom: '左營',
+              hsrTo: '台南',
+              hsrDepTime: defOpt ? defOpt.hsrDepTime : '18:15',
+              hsrIsReturn: true,
+              verifyUrl: buildThsrQueryUrl('左營', '台南', hsrDate, defOpt ? defOpt.hsrDepTime : '18:15'),
+              bookUrl: THSR_BOOK_URL,
+              bookPortalUrl: THSR_BOOK_PORTAL_URL,
+              traVerifyUrl: TRA_VERIFY_URL,
+              traBookUrl: TRA_BOOK_URL,
+              traVerifyLabel: '🚆 驗證台鐵官方時刻表（臺東→臺南/新左營）',
+              desc: '台東回台南首選直達 EMU3000 新自強號（168 次 16:00→18:22 僅 2 小時 22 分），直抵台南市中心免換車；若直達票售罄，可改搭任何南迴對號車至新左營站同站轉高鐵 13 分鐘回台南。'
+            };
+          }
+        }
+        return null;
       }
 
       const THSR_FARES_FULL = {"南港-台北":{"std":40,"free":35,"bus":null},"台北-南港":{"std":40,"free":35,"bus":null},"南港-板橋":{"std":70,"free":65,"bus":null},"板橋-南港":{"std":70,"free":65,"bus":null},"南港-桃園":{"std":200,"free":190,"bus":500},"桃園-南港":{"std":200,"free":190,"bus":500},"南港-新竹":{"std":330,"free":320,"bus":700},"新竹-南港":{"std":330,"free":320,"bus":700},"南港-苗栗":{"std":480,"free":465,"bus":920},"苗栗-南港":{"std":480,"free":465,"bus":920},"南港-台中":{"std":750,"free":725,"bus":1330},"台中-南港":{"std":750,"free":725,"bus":1330},"南港-彰化":{"std":870,"free":840,"bus":1510},"彰化-南港":{"std":870,"free":840,"bus":1510},"南港-雲林":{"std":970,"free":940,"bus":1660},"雲林-南港":{"std":970,"free":940,"bus":1660},"南港-嘉義":{"std":1120,"free":1085,"bus":1880},"嘉義-南港":{"std":1120,"free":1085,"bus":1880},"南港-台南":{"std":1390,"free":1345,"bus":2290},"台南-南港":{"std":1390,"free":1345,"bus":2290},"南港-左營":{"std":1530,"free":1480,"bus":2500},"左營-南港":{"std":1530,"free":1480,"bus":2500},"台北-板橋":{"std":40,"free":35,"bus":null},"板橋-台北":{"std":40,"free":35,"bus":null},"台北-桃園":{"std":160,"free":155,"bus":440},"桃園-台北":{"std":160,"free":155,"bus":440},"台北-新竹":{"std":290,"free":280,"bus":640},"新竹-台北":{"std":290,"free":280,"bus":640},"台北-苗栗":{"std":430,"free":415,"bus":850},"苗栗-台北":{"std":430,"free":415,"bus":850},"台北-台中":{"std":700,"free":675,"bus":1250},"台中-台北":{"std":700,"free":675,"bus":1250},"台北-彰化":{"std":820,"free":795,"bus":1430},"彰化-台北":{"std":820,"free":795,"bus":1430},"台北-雲林":{"std":930,"free":900,"bus":1600},"雲林-台北":{"std":930,"free":900,"bus":1600},"台北-嘉義":{"std":1080,"free":1045,"bus":1820},"嘉義-台北":{"std":1080,"free":1045,"bus":1820},"台北-台南":{"std":1350,"free":1305,"bus":2230},"台南-台北":{"std":1350,"free":1305,"bus":2230},"台北-左營":{"std":1490,"free":1445,"bus":2440},"左營-台北":{"std":1490,"free":1445,"bus":2440},"板橋-桃園":{"std":130,"free":125,"bus":400},"桃園-板橋":{"std":130,"free":125,"bus":400},"板橋-新竹":{"std":260,"free":250,"bus":590},"新竹-板橋":{"std":260,"free":250,"bus":590},"板橋-苗栗":{"std":400,"free":385,"bus":800},"苗栗-板橋":{"std":400,"free":385,"bus":800},"板橋-台中":{"std":670,"free":645,"bus":1210},"台中-板橋":{"std":670,"free":645,"bus":1210},"板橋-彰化":{"std":790,"free":765,"bus":1390},"彰化-板橋":{"std":790,"free":765,"bus":1390},"板橋-雲林":{"std":900,"free":870,"bus":1550},"雲林-板橋":{"std":900,"free":870,"bus":1550},"板橋-嘉義":{"std":1050,"free":1015,"bus":1780},"嘉義-板橋":{"std":1050,"free":1015,"bus":1780},"板橋-台南":{"std":1320,"free":1280,"bus":2180},"台南-板橋":{"std":1320,"free":1280,"bus":2180},"板橋-左營":{"std":1460,"free":1415,"bus":2390},"左營-板橋":{"std":1460,"free":1415,"bus":2390},"桃園-新竹":{"std":130,"free":125,"bus":400},"新竹-桃園":{"std":130,"free":125,"bus":400},"桃園-苗栗":{"std":280,"free":270,"bus":620},"苗栗-桃園":{"std":280,"free":270,"bus":620},"桃園-台中":{"std":540,"free":520,"bus":1010},"台中-桃園":{"std":540,"free":520,"bus":1010},"桃園-彰化":{"std":670,"free":645,"bus":1210},"彰化-桃園":{"std":670,"free":645,"bus":1210},"桃園-雲林":{"std":780,"free":755,"bus":1370},"雲林-桃園":{"std":780,"free":755,"bus":1370},"桃園-嘉義":{"std":920,"free":890,"bus":1580},"嘉義-桃園":{"std":920,"free":890,"bus":1580},"桃園-台南":{"std":1190,"free":1150,"bus":1990},"台南-桃園":{"std":1190,"free":1150,"bus":1990},"桃園-左營":{"std":1330,"free":1290,"bus":2200},"左營-桃園":{"std":1330,"free":1290,"bus":2200},"新竹-苗栗":{"std":140,"free":135,"bus":410},"苗栗-新竹":{"std":140,"free":135,"bus":410},"新竹-台中":{"std":410,"free":395,"bus":820},"台中-新竹":{"std":410,"free":395,"bus":820},"新竹-彰化":{"std":540,"free":520,"bus":1010},"彰化-新竹":{"std":540,"free":520,"bus":1010},"新竹-雲林":{"std":640,"free":620,"bus":1160},"雲林-新竹":{"std":640,"free":620,"bus":1160},"新竹-嘉義":{"std":790,"free":765,"bus":1390},"嘉義-新竹":{"std":790,"free":765,"bus":1390},"新竹-台南":{"std":1060,"free":1025,"bus":1790},"台南-新竹":{"std":1060,"free":1025,"bus":1790},"新竹-左營":{"std":1200,"free":1160,"bus":2000},"左營-新竹":{"std":1200,"free":1160,"bus":2000},"苗栗-台中":{"std":270,"free":260,"bus":610},"台中-苗栗":{"std":270,"free":260,"bus":610},"苗栗-彰化":{"std":390,"free":375,"bus":790},"彰化-苗栗":{"std":390,"free":375,"bus":790},"苗栗-雲林":{"std":500,"free":485,"bus":950},"雲林-苗栗":{"std":500,"free":485,"bus":950},"苗栗-嘉義":{"std":640,"free":620,"bus":1160},"嘉義-苗栗":{"std":640,"free":620,"bus":1160},"苗栗-台南":{"std":920,"free":890,"bus":1580},"台南-苗栗":{"std":920,"free":890,"bus":1580},"苗栗-左營":{"std":1060,"free":1025,"bus":1790},"左營-苗栗":{"std":1060,"free":1025,"bus":1790},"台中-彰化":{"std":130,"free":125,"bus":400},"彰化-台中":{"std":130,"free":125,"bus":400},"台中-雲林":{"std":230,"free":220,"bus":550},"雲林-台中":{"std":230,"free":220,"bus":550},"台中-嘉義":{"std":380,"free":365,"bus":770},"嘉義-台中":{"std":380,"free":365,"bus":770},"台中-台南":{"std":650,"free":630,"bus":1180},"台南-台中":{"std":650,"free":630,"bus":1180},"台中-左營":{"std":790,"free":765,"bus":1390},"左營-台中":{"std":790,"free":765,"bus":1390},"彰化-雲林":{"std":110,"free":105,"bus":370},"雲林-彰化":{"std":110,"free":105,"bus":370},"彰化-嘉義":{"std":250,"free":240,"bus":580},"嘉義-彰化":{"std":250,"free":240,"bus":580},"彰化-台南":{"std":530,"free":510,"bus":1000},"台南-彰化":{"std":530,"free":510,"bus":1000},"彰化-左營":{"std":670,"free":645,"bus":1210},"左營-彰化":{"std":670,"free":645,"bus":1210},"雲林-嘉義":{"std":150,"free":145,"bus":430},"嘉義-雲林":{"std":150,"free":145,"bus":430},"雲林-台南":{"std":420,"free":405,"bus":830},"台南-雲林":{"std":420,"free":405,"bus":830},"雲林-左營":{"std":560,"free":540,"bus":1040},"左營-雲林":{"std":560,"free":540,"bus":1040},"嘉義-台南":{"std":280,"free":270,"bus":620},"台南-嘉義":{"std":280,"free":270,"bus":620},"嘉義-左營":{"std":410,"free":395,"bus":820},"左營-嘉義":{"std":410,"free":395,"bus":820},"台南-左營":{"std":140,"free":135,"bus":410},"左營-台南":{"std":140,"free":135,"bus":410}};
@@ -1986,8 +2438,12 @@
           const stFrom = toHsrStationName(from);
           const stTo = toHsrStationName(to);
           if (!THSR_ST_ORDER.includes(stFrom) || !THSR_ST_ORDER.includes(stTo) || stFrom === stTo) {
+            const eastFallback = isDomesticTW ? buildEastHybridItem(origin, dest, 'hsr', isReturn) : null;
+            if (eastFallback) return eastFallback;
             return buildTransitItem(origin, dest, 'train', isReturn);
           }
+          const eastSpecial = isDomesticTW ? buildEastHybridItem(origin, dest, 'hsr', isReturn) : null;
+          if (eastSpecial) return eastSpecial;
           const pair = `${stFrom}-${stTo}`;
           const opts = getDomesticScheduleOptions(origin, dest, 'hsr', isReturn);
           const defOpt = opts[1] || opts[0];
@@ -2017,6 +2473,40 @@
           };
         }
         if (mode === 'train') {
+          const normTraSt = (s) => {
+            const x = String(s || '');
+            if (x.includes('南港') || x.includes('台北') || x.includes('臺北')) return '南港';
+            if (x.includes('左營') || x.includes('高雄')) return '新左營';
+            if (x.includes('台南') || x.includes('臺南')) return '台南';
+            if (x.includes('花蓮')) return '花蓮';
+            if (x.includes('宜蘭')) return '宜蘭';
+            if (x.includes('台東') || x.includes('臺東')) return '台東';
+            return x;
+          };
+          const traObj = TRA_EAST_SCHEDULES[`${normTraSt(from)}-${normTraSt(to)}`];
+          if (traObj && traObj.trains && traObj.trains.length) {
+            const realOpts = traObj.trains.slice(0, 6).map(t => ({
+              label: `台鐵 ${t.no} ${t.type} (${t.dep}→${t.arr}，${fmtDur(t.durMins)})`,
+              time: `${t.dep} - ${t.arr}`,
+              arrMins: parseHHMM(t.arr, parseHHMM(t.dep)),
+              durMins: t.durMins
+            }));
+            const defOpt = realOpts[isReturn ? Math.min(2, realOpts.length - 1) : Math.min(1, realOpts.length - 1)] || realOpts[0];
+            return {
+              category: '交通', time: defOpt.time,
+              title: `台鐵對號快車 新自強/普悠瑪/太魯閣（${from} → ${to}）`,
+              address: `台鐵${from}站 → 台鐵${to}站`,
+              mapsQuery: `台鐵${to}車站`,
+              hours: `${fmtDur(defOpt.durMins)}（對號快車）`,
+              cost: `全票 NT$ ${traObj.fare}`,
+              transport: '台鐵官方時刻表實測車次・建議提早於台鐵官網訂票', mustVisit: false,
+              transitMode: 'train', scheduleOptions: realOpts, transferInfo: getDomesticTransferInfo(to),
+              traVerifyUrl: TRA_VERIFY_URL,
+              traBookUrl: TRA_BOOK_URL,
+              traVerifyLabel: `🚆 驗證台鐵官方時刻表（${from}→${to}）`,
+              desc: `從${from}搭乘台鐵 EMU3000 新自強／普悠瑪／太魯閣號前往${to}，點選下方車次可自動順延調整後續行程，並可點擊台鐵官方時刻表驗證當日車次。`
+            };
+          }
           const opts = getDomesticScheduleOptions(origin, dest, 'train', isReturn);
           const defOpt = opts[0];
           const trainMins = estimateLandMinutes(from, to, 'train');
@@ -2028,8 +2518,10 @@
             cost: isTainanTaipei ? '約 NT$ 738' : '依台鐵官網票價表',
             transport: '台鐵直達市中心，可買台鐵便當', mustVisit: false,
             transitMode: 'train', scheduleOptions: opts, transferInfo: getDomesticTransferInfo(to),
-            verifyUrl: 'https://www.railway.gov.tw/tra-tip-web/tip/tip001/tip112/gobytime',
-            desc: `從${from}搭台鐵前往${to}，點選下方參考班次可順延調整後續行程，並可點擊「驗證時刻表」確認當日台鐵官網班次。`
+            traVerifyUrl: TRA_VERIFY_URL,
+            traBookUrl: TRA_BOOK_URL,
+            traVerifyLabel: `🚆 驗證台鐵官方時刻表（${from}→${to}）`,
+            desc: `從${from}搭台鐵前往${to}，點選下方參考班次可順延調整後續行程，並可點擊「驗證台鐵官方時刻表」確認當日台鐵官網班次。`
           };
         }
         if (mode === 'drive') {
@@ -3535,23 +4027,31 @@
           const orig = trip.originKey || '台南';
           if (Array.isArray(d.items)) {
             d.items = d.items.map(it => {
-              if (it.category === '交通' && (it.transitMode === 'hsr' || (it.title || '').includes('台灣高鐵'))) {
+              if (it.category === '交通' && (it.transitMode === 'hsr' || it.transitMode === 'hsr_hybrid' || it.transitMode === 'train' || (it.title || '').includes('台灣高鐵') || (it.title || '').includes('台鐵火車'))) {
                 const isRet = dIdx === trip.days.length - 1 && trip.days.length > 1;
-                if (!it.verifyUrl || (it.title || '').includes('高雄站')) {
+                const isEast = ['花蓮', '宜蘭', '台東', '臺東'].some(k => (dCity || '').includes(k) || (it.title || '').includes(k));
+                if (isEast && !it.traVerifyUrl && trip.transportMode !== 'drive') {
+                  return Object.assign({}, it, buildTransitItem(orig, dCity, trip.transportMode || 'auto', isRet));
+                }
+                if (it.transitMode === 'train' && !it.traVerifyUrl) {
+                  return Object.assign({}, it, { verifyUrl: '', traVerifyUrl: TRA_VERIFY_URL, traBookUrl: TRA_BOOK_URL });
+                }
+                if (it.transitMode === 'hsr' && (!it.verifyUrl || (it.title || '').includes('高雄站'))) {
                   return Object.assign({}, it, buildTransitItem(orig, dCity, 'hsr', isRet));
                 }
-                const titleMatch = (it.title || '').match(/高鐵(.+?)站\s*[→>-]+\s*高鐵(.+?)站/);
-                const stFrom = it.hsrFrom || (titleMatch ? titleMatch[1] : toHsrStationName(isRet ? dCity : orig));
-                const stTo = it.hsrTo || (titleMatch ? titleMatch[2] : toHsrStationName(isRet ? orig : dCity));
-                const dayIso = (isRet && trip.returnDate) ? trip.returnDate : (trip.departDate ? addDaysIso(trip.departDate, dIdx) : '');
-                return Object.assign({}, it, {
-                  hsrFrom: stFrom,
-                  hsrTo: stTo,
-                  hsrIsReturn: Boolean(isRet),
-                  verifyUrl: buildThsrQueryUrl(stFrom, stTo, dayIso, it.time),
-                  bookUrl: THSR_BOOK_URL,
-                  bookPortalUrl: THSR_BOOK_PORTAL_URL
-                });
+                if (it.hsrFrom && it.hsrTo) {
+                  const matchedOpt = (it.scheduleOptions || []).find(o => o.time === it.time);
+                  const stFrom = (matchedOpt && matchedOpt.hsrFrom) || it.hsrFrom;
+                  const stTo = (matchedOpt && matchedOpt.hsrTo) || it.hsrTo;
+                  const hsrTm = (matchedOpt && matchedOpt.hsrDepTime) || it.hsrDepTime || it.time;
+                  const dayIso = (isRet && trip.returnDate) ? trip.returnDate : (trip.departDate ? addDaysIso(trip.departDate, dIdx) : '');
+                  return Object.assign({}, it, {
+                    hsrIsReturn: Boolean(isRet),
+                    verifyUrl: buildThsrQueryUrl(stFrom, stTo, dayIso, hsrTm),
+                    bookUrl: THSR_BOOK_URL,
+                    bookPortalUrl: THSR_BOOK_PORTAL_URL
+                  });
+                }
               }
               return it;
             });
@@ -4221,20 +4721,26 @@
           const mapsHref = getMapsUrl(navQuery);
           const photoUrl = getSpotPhotoUrl(item.category, item.title);
           const photoFallback = makeEhonPhotoFallback(item.category, item.title);
-          const isHsrCard = item.category === '交通' && (item.transitMode === 'hsr' || (item.title || '').includes('台灣高鐵'));
+          const isHsrCard = item.category === '交通' && (item.transitMode === 'hsr' || item.transitMode === 'hsr_hybrid' || (item.title || '').includes('台灣高鐵'));
+          const isTraCard = item.category === '交通' && (item.transitMode === 'train' || item.transitMode === 'hsr_hybrid' || Boolean(item.traVerifyUrl));
           let itemVerifyUrl = item.verifyUrl;
           let itemBookUrl = item.bookUrl;
           let itemBookPortalUrl = item.bookPortalUrl || '';
           if (isHsrCard) {
+            const matchedOpt = (item.scheduleOptions || []).find(o => o.time === item.time);
             const titleMatch = (item.title || '').match(/高鐵(.+?)站\s*[→>-]+\s*高鐵(.+?)站/);
             const isRetCard = item.hsrIsReturn !== undefined ? Boolean(item.hsrIsReturn) : (activeDayIndex === nDays - 1 && nDays > 1);
-            const hsrFrom = item.hsrFrom || (titleMatch ? titleMatch[1] : toHsrStationName(isRetCard ? dayCity : (state.originKey || '台南')));
-            const hsrTo = item.hsrTo || (titleMatch ? titleMatch[2] : toHsrStationName(isRetCard ? (state.originKey || '台南') : dayCity));
+            const hsrFrom = (matchedOpt && matchedOpt.hsrFrom) || item.hsrFrom || (titleMatch ? titleMatch[1] : toHsrStationName(isRetCard ? dayCity : (state.originKey || '台南')));
+            const hsrTo = (matchedOpt && matchedOpt.hsrTo) || item.hsrTo || (titleMatch ? titleMatch[2] : toHsrStationName(isRetCard ? (state.originKey || '台南') : dayCity));
+            const hsrTimeArg = (matchedOpt && matchedOpt.hsrDepTime) || item.hsrDepTime || item.time;
             const itemIsoDate = (isRetCard && state.returnDate) ? state.returnDate : (state.departDate ? addDaysIso(state.departDate, activeDayIndex) : '');
-            itemVerifyUrl = buildThsrQueryUrl(hsrFrom, hsrTo, itemIsoDate, item.time);
+            itemVerifyUrl = buildThsrQueryUrl(hsrFrom, hsrTo, itemIsoDate, hsrTimeArg);
             itemBookUrl = THSR_BOOK_URL;
             itemBookPortalUrl = THSR_BOOK_PORTAL_URL;
           }
+          const itemTraVerifyUrl = isTraCard ? (item.traVerifyUrl || TRA_VERIFY_URL) : '';
+          const itemTraBookUrl = isTraCard ? (item.traBookUrl || TRA_BOOK_URL) : '';
+          const itemTraVerifyLabel = item.traVerifyLabel || '🚆 驗證台鐵官方時刻表';
 
           return `
             <div class="relative">
@@ -4276,11 +4782,13 @@
                             return `<button type="button" class="transit-slot-btn ehon-pill px-2.5 py-1 font-bold ${isCur ? 'bg-[#F7D47A]' : 'bg-[#FFFDF7]'}" data-item-id="${item.id}" data-opt-idx="${oIdx}">${escapeHtml(opt.label)}</button>`;
                           }).join('')}
                         </div>
-                        ${(itemVerifyUrl || itemBookUrl) ? `
+                        ${(itemVerifyUrl || itemBookUrl || itemTraVerifyUrl || itemTraBookUrl) ? `
                           <div class="flex flex-wrap gap-3 pt-1 border-t border-dashed border-[#2D3A4A]/20 text-xs font-bold">
                             ${itemVerifyUrl ? `<a href="${itemVerifyUrl}" target="_blank" rel="noopener noreferrer" class="flight-ext-link underline">🔍 驗證高鐵官方時刻表</a>` : ''}
                             ${itemBookUrl ? `<a href="${itemBookUrl}" target="_blank" rel="noopener noreferrer" class="flight-ext-link underline">🎫 高鐵網路訂票</a>` : ''}
-                            ${itemBookPortalUrl ? `<a href="${itemBookPortalUrl}" target="_blank" rel="noopener noreferrer" class="flight-ext-link underline">📋 訂票官網入口</a>` : ''}
+                            ${itemBookPortalUrl ? `<a href="${itemBookPortalUrl}" target="_blank" rel="noopener noreferrer" class="flight-ext-link underline">📋 高鐵官網入口</a>` : ''}
+                            ${itemTraVerifyUrl ? `<a href="${itemTraVerifyUrl}" target="_blank" rel="noopener noreferrer" class="flight-ext-link underline">${escapeHtml(itemTraVerifyLabel)}</a>` : ''}
+                            ${itemTraBookUrl ? `<a href="${itemTraBookUrl}" target="_blank" rel="noopener noreferrer" class="flight-ext-link underline">🎫 台鐵網路訂票</a>` : ''}
                           </div>
                         ` : ''}
                       </div>
@@ -5451,9 +5959,11 @@
         const multi = parseMultiLegRoute(text);
         let transportMode = document.getElementById('transportPrefSelect').value;
         if (transportMode === 'auto') {
-          if (text.includes('高鐵')) transportMode = 'hsr';
+          if (text.includes('開車') || text.includes('自駕')) transportMode = 'drive';
+          else if (text.includes('大眾運輸') || text.includes('不開車') || text.includes('不自駕') || text.includes('免開車')) transportMode = 'auto';
+          else if (text.includes('高鐵') && (text.includes('台鐵') || text.includes('火車') || text.includes('客運'))) transportMode = 'auto';
+          else if (text.includes('高鐵')) transportMode = 'hsr';
           else if (text.includes('火車') || text.includes('台鐵')) transportMode = 'train';
-          else if (text.includes('開車') || text.includes('自駕')) transportMode = 'drive';
         }
         const depDate = document.getElementById('departDateInput').value;
         let retDate = document.getElementById('returnDateInput').value;
@@ -5566,6 +6076,10 @@
         if (!detectedCity) { const lead = text.split(/[\d\s，,。]/)[0].trim(); detectedCity = lead.length >= 2 && lead.length <= 10 ? lead : '台南'; }
 
         const isTWDest = TAIWAN_CITIES.some(c => detectedCity.includes(c));
+        if (isTWDest && !detectedOrigin) {
+          const selOrig = (document.getElementById('hsrOriginSelect') && document.getElementById('hsrOriginSelect').value) || '台南';
+          if (selOrig && !detectedCity.includes(selOrig)) detectedOrigin = selOrig;
+        }
         let depAir = document.getElementById('departAirportSelect').value;
         let retAir = document.getElementById('returnAirportSelect').value;
         const isTWOffshore = ['澎湖', '金門', '馬祖', '蘭嶼', '綠島'].some(k => text.includes(k));
