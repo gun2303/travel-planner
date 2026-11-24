@@ -254,51 +254,6 @@
     body.reduce-motion .animate-day-bounce,
     body.reduce-motion .modal-dialog { animation: none !important; }
     body.reduce-motion * { transition-duration: 0.01ms !important; }
-
-    /* Print / Save as PDF clean A4 itinerary */
-    #printAllDaysContainer { display: none; }
-    @media print {
-      @page { margin: 12mm; size: A4; }
-      html, body, body.dark-mode {
-        display: block !important;
-        background: #FFFFFF !important;
-        color: #111827 !important;
-        color-scheme: light !important;
-        font-size: 12px !important;
-        min-height: auto !important;
-        height: auto !important;
-        padding: 0 !important;
-        margin: 0 !important;
-        overflow: visible !important;
-      }
-      header, nav, main, #promptSection, #heroAndWeatherSection, #toastBox,
-      #itemModal, #guideModal, #regenModal, #metaModal, #tripsModal, #printPreviewModal, .watermark-wrap {
-        display: none !important;
-      }
-      #printAllDaysContainer {
-        display: block !important;
-        position: static !important;
-        width: 100% !important;
-        background: #FFFFFF !important;
-        color: #111827 !important;
-      }
-      .print-day-block {
-        break-inside: avoid;
-        page-break-inside: avoid;
-        margin-bottom: 14px;
-        border: 1.5px solid #2D3A4A;
-        border-radius: 10px;
-        padding: 10px 12px;
-        background: #FFFFFF !important;
-        color: #111827 !important;
-      }
-      .print-item-row {
-        break-inside: avoid;
-        page-break-inside: avoid;
-        border-top: 1px dashed #CBD5E1;
-        padding: 6px 0;
-      }
-    }
   </style>
 </head>
 <body class="min-h-screen flex flex-col pb-24 lg:pb-8 relative">
@@ -347,7 +302,7 @@
             <button type="button" id="btnShareLink" class="w-full text-left px-3 py-2 rounded-xl hover:bg-[#96CBE3]/40">🔗 複製分享連結</button>
             <button type="button" id="btnCopyLine" class="w-full text-left px-3 py-2 rounded-xl hover:bg-[#96CBE3]/40">📋 複製 LINE 行程</button>
             <button type="button" id="btnExportIcs" class="w-full text-left px-3 py-2 rounded-xl hover:bg-[#B3D9A6]/45">📅 匯出行事曆 (.ics)</button>
-            <button type="button" id="btnPrintPdf" class="w-full text-left px-3 py-2 rounded-xl hover:bg-[#F7D47A]/50">🖨️ 列印 / 存成 PDF</button>
+            <button type="button" id="btnExportPdf" class="w-full text-left px-3 py-2 rounded-xl hover:bg-[#F7D47A]/50">📄 轉存為 PDF 檔</button>
             <div class="border-t border-dashed border-[#2D3A4A]/25 my-1"></div>
             <input type="file" id="importJsonInput" accept=".json,application/json" class="hidden" />
             <button type="button" id="btnImportJson" class="w-full text-left px-3 py-2 rounded-xl hover:bg-[#B3D9A6]/40">📥 匯入行程檔</button>
@@ -881,9 +836,6 @@
     </aside>
   </main>
 
-  <!-- 專供列印 / 存 PDF 的完整多日行程表 -->
-  <div id="printAllDaysContainer" aria-hidden="true"></div>
-
   <!-- 手機版固定底部導覽列 -->
   <nav class="lg:hidden fixed bottom-0 inset-x-0 z-30 bg-[#FFFDF7] border-t-[3px] border-[#2D3A4A] px-2 py-1.5 pb-[max(0.45rem,env(safe-area-inset-bottom))]">
     <div class="grid grid-cols-4 gap-1.5 text-xs font-bold">
@@ -1024,8 +976,8 @@
         </div>
 
         <div class="ehon-card-soft p-3.5 bg-[#F0A195]/20 space-y-1.5">
-          <div class="font-bold text-sm">4️⃣ 分享連結、行事曆 (.ics)、PDF 列印與護眼模式</div>
-          <p>點右上角 <strong>「⋯」</strong> 可一鍵 <strong>🔗 複製分享連結</strong>（貼到 LINE 給旅伴直接開啟匯入）、<strong>📅 匯出 .ics 行事曆</strong>、<strong>🖨️ 列印 / 存 PDF</strong>（一次印出完整多天行程），以及切換 <strong>🌙 護眼深色模式</strong>。</p>
+          <div class="font-bold text-sm">4️⃣ 分享連結、行事曆 (.ics)、匯出 PDF 與護眼模式</div>
+          <p>點右上角 <strong>「⋯」</strong> 可一鍵 <strong>🔗 複製分享連結</strong>（貼到 LINE 給旅伴直接開啟匯入）、<strong>📅 匯出 .ics 行事曆</strong>、<strong>📄 轉存為 PDF 檔</strong>（自動排版下載完整多天 A4 行程 PDF），以及切換 <strong>🌙 護眼深色模式</strong>。</p>
         </div>
       </div>
 
@@ -1072,25 +1024,6 @@
         <button type="button" id="btnCloseMetaModal" class="touch-target text-xl leading-none font-bold" aria-label="關閉">&times;</button>
       </div>
       <form id="metaModalForm" class="space-y-3 text-sm"></form>
-    </div>
-  </div>
-
-  <!-- 列印 / 存成 PDF 預覽與備援 Modal -->
-  <div id="printPreviewModal" class="modal-backdrop fixed inset-0 z-50 hidden bg-[#2D3A4A]/50 flex items-center justify-center p-3 sm:p-4">
-    <div class="modal-dialog ehon-card max-w-3xl w-full max-h-[90vh] flex flex-col overflow-hidden bg-[#FFFDF7]">
-      <div class="p-4 flex flex-wrap items-center justify-between gap-2 border-b-2 border-[#2D3A4A] bg-[#F7D47A]/40">
-        <div>
-          <h3 class="font-bold text-base">🖨️ 列印 / 存成 PDF 預覽</h3>
-          <p class="text-xs text-muted">若您的瀏覽器或內嵌視窗未自動跳出列印視窗，可使用下方按鈕直接開啟或下載列印版</p>
-        </div>
-        <button type="button" id="btnClosePrintPreviewModal" class="touch-target text-2xl leading-none font-bold" aria-label="關閉">&times;</button>
-      </div>
-      <div class="p-3 bg-[#FFFDF7] border-b border-dashed border-[#2D3A4A]/25 flex flex-wrap gap-2 text-xs font-bold">
-        <button type="button" id="btnPrintNowInModal" class="ehon-pill ehon-btn-raised px-3 py-1.5 bg-[#F7D47A]">🖨️ 呼叫系統列印 / 存 PDF</button>
-        <button type="button" id="btnPrintNewTab" class="ehon-pill ehon-btn-raised px-3 py-1.5 bg-[#96CBE3]">🌐 新分頁開啟列印頁</button>
-        <button type="button" id="btnDownloadPrintHtml" class="ehon-pill ehon-btn-raised px-3 py-1.5 bg-[#B3D9A6]">📄 下載離線可列印檔 (.html)</button>
-      </div>
-      <div id="printPreviewBody" class="p-4 overflow-y-auto text-xs bg-[#FFFFFF] text-[#111827] space-y-2"></div>
     </div>
   </div>
 
@@ -5002,47 +4935,316 @@
         showToast('已匯出記帳明細 CSV！');
       }
 
-      // ── 建置列印 / 存 PDF 完整多日檢視 ──
-      function buildPrintView() {
-        const container = document.getElementById('printAllDaysContainer');
+      // ── 直接轉存為多頁 A4 PDF 檔案（離線純前端 Canvas 繪製繁中＋PDF 1.4 編碼）──
+      function drawRoundRectPath(ctx, x, y, w, h, r) {
+        const rr = Math.min(r, w / 2, h / 2);
+        ctx.beginPath();
+        ctx.moveTo(x + rr, y);
+        ctx.lineTo(x + w - rr, y);
+        ctx.quadraticCurveTo(x + w, y, x + w, y + rr);
+        ctx.lineTo(x + w, y + h - rr);
+        ctx.quadraticCurveTo(x + w, y + h, x + w - rr, y + h);
+        ctx.lineTo(x + rr, y + h);
+        ctx.quadraticCurveTo(x, y + h, x, y + h - rr);
+        ctx.lineTo(x, y + rr);
+        ctx.quadraticCurveTo(x, y, x + rr, y);
+        ctx.closePath();
+      }
+
+      function wrapCanvasText(ctx, text, maxWidth) {
+        const out = [];
+        const paras = String(text || '').split(/\r?\n/);
+        for (const para of paras) {
+          if (!para) { out.push(''); continue; }
+          let line = '';
+          for (const ch of Array.from(para)) {
+            const test = line + ch;
+            if (line && ctx.measureText(test).width > maxWidth) {
+              out.push(line);
+              line = ch;
+            } else {
+              line = test;
+            }
+          }
+          if (line) out.push(line);
+        }
+        return out.length ? out : [''];
+      }
+
+      function buildPdfFromJpegPages(jpegPages, pageW, pageH) {
+        const enc = new TextEncoder();
+        const chunks = [];
+        let byteLen = 0;
+        const pushBytes = (u8) => { chunks.push(u8); byteLen += u8.length; };
+        const pushStr = (s) => pushBytes(enc.encode(s));
+
+        // 595.28 x 841.89 pt = A4
+        const ptW = 595.28;
+        const ptH = 841.89;
+        const totalObjs = 2 + jpegPages.length * 3;
+        const offsets = new Array(totalObjs + 1).fill(0);
+        const kidRefs = [];
+
+        pushStr('%PDF-1.4\n%\xE2\xE3\xCF\xD3\n');
+
+        offsets[1] = byteLen;
+        pushStr('1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n');
+
+        // Placeholder slot for obj 2 (Kids list filled after computing page IDs)
+        for (let i = 0; i < jpegPages.length; i++) {
+          kidRefs.push(`${3 + i * 3} 0 R`);
+        }
+        offsets[2] = byteLen;
+        pushStr(`2 0 obj\n<< /Type /Pages /Kids [${kidRefs.join(' ')}] /Count ${jpegPages.length} >>\nendobj\n`);
+
+        for (let i = 0; i < jpegPages.length; i++) {
+          const pageId = 3 + i * 3;
+          const contentId = pageId + 1;
+          const imgId = pageId + 2;
+          const imName = `/Im${i}`;
+          const streamBody = `q\n${ptW.toFixed(2)} 0 0 ${ptH.toFixed(2)} 0 0 cm\n${imName} Do\nQ\n`;
+          const streamBytes = enc.encode(streamBody);
+          const jpg = jpegPages[i];
+
+          offsets[pageId] = byteLen;
+          pushStr(`${pageId} 0 obj\n<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${ptW} ${ptH}] /Resources << /XObject << ${imName} ${imgId} 0 R >> >> /Contents ${contentId} 0 R >>\nendobj\n`);
+
+          offsets[contentId] = byteLen;
+          pushStr(`${contentId} 0 obj\n<< /Length ${streamBytes.length} >>\nstream\n`);
+          pushBytes(streamBytes);
+          pushStr('endstream\nendobj\n');
+
+          offsets[imgId] = byteLen;
+          pushStr(`${imgId} 0 obj\n<< /Type /XObject /Subtype /Image /Width ${pageW} /Height ${pageH} /ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /DCTDecode /Length ${jpg.length} >>\nstream\n`);
+          pushBytes(jpg);
+          pushStr('\nendstream\nendobj\n');
+        }
+
+        const xrefStart = byteLen;
+        pushStr(`xref\n0 ${totalObjs + 1}\n0000000000 65535 f \n`);
+        for (let id = 1; id <= totalObjs; id++) {
+          pushStr(`${String(offsets[id]).padStart(10, '0')} 00000 n \n`);
+        }
+        pushStr(`trailer\n<< /Size ${totalObjs + 1} /Root 1 0 R >>\nstartxref\n${xrefStart}\n%%EOF\n`);
+
+        const out = new Uint8Array(byteLen);
+        let pos = 0;
+        for (const c of chunks) { out.set(c, pos); pos += c.length; }
+        return out;
+      }
+
+      function exportTripPdf() {
+        const PAGE_W = 1240;
+        const PAGE_H = 1754;
+        const PAD_X = 64;
+        const TOP_Y = 60;
+        const BOTTOM_Y = 1650;
+        const CONTENT_W = PAGE_W - PAD_X * 2;
+        const FONT_FAMILY = '"Huninn", "Noto Sans TC", "PingFang TC", "Microsoft JhengHei", sans-serif';
+
+        const pages = [];
+        let canvas, ctx, cursorY;
+        const startNewPage = () => {
+          canvas = document.createElement('canvas');
+          canvas.width = PAGE_W;
+          canvas.height = PAGE_H;
+          ctx = canvas.getContext('2d');
+          ctx.fillStyle = '#FFFFFF';
+          ctx.fillRect(0, 0, PAGE_W, PAGE_H);
+          ctx.textBaseline = 'top';
+          pages.push(canvas);
+          cursorY = TOP_Y;
+        };
+        startNewPage();
+
         const f = (state && state.flights) || {};
-        const hasFlight = state && state.departAirport && state.departAirport !== 'NONE' && state.returnAirport && state.returnAirport !== 'NONE';
+        const hasFlight = Boolean(state && state.departAirport && state.departAirport !== 'NONE' && state.returnAirport && state.returnAirport !== 'NONE');
         const expensesArr = (state && Array.isArray(state.expenses)) ? state.expenses : [];
         const totalSpent = expensesArr.reduce((a, e) => a + (Number(e.amount) || 0) * (CURRENCY_RATES_TO_TWD[e.currency] || 1), 0);
         const travelers = Math.max(1, parseInt(state && state.travelers, 10) || 1);
         const daysArr = (state && Array.isArray(state.days)) ? state.days : [];
 
-        const html = `
-          <div style="border-bottom:2px solid #2D3A4A;padding-bottom:8px;margin-bottom:12px;">
-            <h1 style="font-size:20px;font-weight:bold;margin:0;">🏮 ${escapeHtml((state && state.title) || '旅遊行程表')}</h1>
-            <div style="margin-top:4px;color:#475569;">📅 ${escapeHtml((state && state.dates) || '')} ｜ 📍 ${escapeHtml((state && (state.cityLabel || state.cityKey)) || '')} ｜ 👥 ${travelers} 人 ｜ 💰 預算 NT$ ${(Number(state && state.budgetTWD) || 0).toLocaleString()}（已記 NT$ ${Math.round(totalSpent).toLocaleString()}）</div>
-            ${hasFlight ? `<div style="margin-top:4px;">✈️ 去程：${escapeHtml(f.outboundAirline)} ${escapeHtml(f.outboundNo)} (${escapeHtml(f.outboundTime)}) ｜ 回程：${escapeHtml(f.returnAirline)} ${escapeHtml(f.returnNo)} (${escapeHtml(f.returnTime)}) ${f.pnr ? '｜ PNR: ' + escapeHtml(f.pnr) : ''}</div>` : ''}
-          </div>
-          ${daysArr.map(d => `
-            <div class="print-day-block">
-              <div style="display:flex;justify-content:space-between;align-items:baseline;margin-bottom:6px;">
-                <strong style="font-size:14px;">Day ${d.dayNumber} · ${escapeHtml(d.theme)}</strong>
-                <span style="color:#475569;font-size:11px;">${escapeHtml(d.dateLabel || '')}</span>
-              </div>
-              ${d.hotel && d.hotel.name ? `<div style="font-size:11px;margin-bottom:6px;background:#F8FAFC;padding:4px 8px;border-radius:6px;">🏨 住宿：<strong>${escapeHtml(d.hotel.name)}</strong>${d.hotel.address ? '（' + escapeHtml(d.hotel.address) + '）' : ''}${d.hotel.bookingRef ? ' ｜ 代號：' + escapeHtml(d.hotel.bookingRef) : ''}</div>` : ''}
-              ${(d.items || []).map(it => `
-                <div class="print-item-row">
-                  <div><strong>${escapeHtml(it.time)}</strong> [${escapeHtml(it.category)}] <strong>${escapeHtml(it.title)}</strong> ${it.cost ? `— ${escapeHtml(it.cost)}` : ''}</div>
-                  ${it.address ? `<div style="color:#475569;font-size:11px;">📍 ${escapeHtml(it.address)} ${it.transport ? '｜ 🚆 ' + escapeHtml(it.transport) : ''}</div>` : ''}
-                  ${it.desc ? `<div style="font-size:11px;margin-top:2px;">${escapeHtml(it.desc)}</div>` : ''}
-                </div>
-              `).join('')}
-            </div>
-          `).join('')}
-          ${(state && state.memo) ? `<div class="print-day-block"><strong>📝 備註：</strong><div style="white-space:pre-wrap;margin-top:4px;">${escapeHtml(state.memo)}</div></div>` : ''}
-        `;
-        if (container) container.innerHTML = html;
-        return html;
-      }
+        // 頁首旅遊總覽卡
+        ctx.font = `bold 34px ${FONT_FAMILY}`;
+        const titleLines = wrapCanvasText(ctx, `🏮 ${(state && state.title) || '旅遊行程表'}`, CONTENT_W - 48);
+        const metaLine = `📅 ${(state && state.dates) || '未指定日期'}  ｜  📍 ${(state && (state.cityLabel || state.cityKey)) || ''}  ｜  👥 ${travelers} 人  ｜  💰 預算 NT$ ${(Number(state && state.budgetTWD) || 0).toLocaleString()}（已記 NT$ ${Math.round(totalSpent).toLocaleString()}）`;
+        ctx.font = `22px ${FONT_FAMILY}`;
+        const metaLines = wrapCanvasText(ctx, metaLine, CONTENT_W - 48);
+        const flightText = hasFlight
+          ? `✈️ 去程：${f.outboundAirline || ''} ${f.outboundNo || ''} (${f.outboundTime || ''})  ｜  回程：${f.returnAirline || ''} ${f.returnNo || ''} (${f.returnTime || ''})${f.pnr ? '  ｜  PNR: ' + f.pnr : ''}`
+          : '';
+        const flightLines = flightText ? wrapCanvasText(ctx, flightText, CONTENT_W - 48) : [];
+        const headerH = 28 + titleLines.length * 44 + 10 + metaLines.length * 32 + (flightLines.length ? 8 + flightLines.length * 30 : 0) + 22;
 
-      function buildPrintableHtmlDocument(innerHtml, autoPrint) {
-        const title = escapeHtml((state && state.title) || '旅遊行程表');
-        return `<!DOCTYPE html><html lang="zh-Hant"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${title}</title><style>@page{margin:12mm;size:A4;}body{font-family:-apple-system,BlinkMacSystemFont,"Noto Sans TC",sans-serif;background:#fff;color:#111827;font-size:12px;line-height:1.55;margin:16px auto;max-width:820px;padding:0 12px;}.print-toolbar{display:flex;gap:8px;margin-bottom:14px;padding-bottom:10px;border-bottom:1px dashed #cbd5e1;}.print-btn{background:#F7D47A;color:#2D3A4A;border:2px solid #2D3A4A;border-radius:999px;padding:6px 14px;font-weight:bold;cursor:pointer;font-size:13px;}.print-day-block{break-inside:avoid;page-break-inside:avoid;margin-bottom:14px;border:1.5px solid #2D3A4A;border-radius:10px;padding:10px 12px;}.print-item-row{break-inside:avoid;page-break-inside:avoid;border-top:1px dashed #CBD5E1;padding:6px 0;}@media print{.print-toolbar{display:none !important;}body{margin:0;padding:0;max-width:none;}}</style></head><body><div class="print-toolbar"><button type="button" class="print-btn" onclick="window.print()">🖨️ 列印 / 存成 PDF</button></div>${innerHtml}${autoPrint ? '<script>window.addEventListener("load",function(){setTimeout(function(){try{window.print();}catch(e){}},120);});<\/script>' : ''}</body></html>`;
+        drawRoundRectPath(ctx, PAD_X, cursorY, CONTENT_W, headerH, 18);
+        ctx.fillStyle = '#FFFDF7';
+        ctx.fill();
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = '#2D3A4A';
+        ctx.stroke();
+
+        // 頂端彩色裝飾條
+        drawRoundRectPath(ctx, PAD_X + 2, cursorY + 2, CONTENT_W - 4, 12, 6);
+        ctx.fillStyle = '#F7D47A';
+        ctx.fill();
+
+        let hy = cursorY + 26;
+        ctx.font = `bold 34px ${FONT_FAMILY}`;
+        ctx.fillStyle = '#1E293B';
+        for (const ln of titleLines) { ctx.fillText(ln, PAD_X + 24, hy); hy += 44; }
+        hy += 6;
+        ctx.font = `22px ${FONT_FAMILY}`;
+        ctx.fillStyle = '#475569';
+        for (const ln of metaLines) { ctx.fillText(ln, PAD_X + 24, hy); hy += 32; }
+        if (flightLines.length) {
+          hy += 6;
+          ctx.fillStyle = '#2D3A4A';
+          for (const ln of flightLines) { ctx.fillText(ln, PAD_X + 24, hy); hy += 30; }
+        }
+        cursorY += headerH + 26;
+
+        const drawDayHeader = (d, continued) => {
+          const barH = 56;
+          if (cursorY + barH > BOTTOM_Y) startNewPage();
+          drawRoundRectPath(ctx, PAD_X, cursorY, CONTENT_W, barH, 12);
+          ctx.fillStyle = '#F7D47A';
+          ctx.fill();
+          ctx.lineWidth = 2.5;
+          ctx.strokeStyle = '#2D3A4A';
+          ctx.stroke();
+
+          ctx.font = `bold 25px ${FONT_FAMILY}`;
+          ctx.fillStyle = '#1E293B';
+          const suffix = continued ? '（續）' : '';
+          ctx.fillText(`Day ${d.dayNumber} · ${d.theme || ''}${suffix}`, PAD_X + 20, cursorY + 14);
+          if (d.dateLabel) {
+            ctx.font = `bold 20px ${FONT_FAMILY}`;
+            ctx.fillStyle = '#334155';
+            const dw = ctx.measureText(d.dateLabel).width;
+            ctx.fillText(d.dateLabel, PAD_X + CONTENT_W - 20 - dw, cursorY + 17);
+          }
+          cursorY += barH + 12;
+        };
+
+        for (const d of daysArr) {
+          if (cursorY + 150 > BOTTOM_Y) startNewPage();
+          drawDayHeader(d, false);
+
+          if (d.hotel && d.hotel.name) {
+            const hotelStr = `🏨 住宿：${d.hotel.name}${d.hotel.address ? '（' + d.hotel.address + '）' : ''}${d.hotel.bookingRef ? ' ｜ 代號：' + d.hotel.bookingRef : ''}`;
+            ctx.font = `21px ${FONT_FAMILY}`;
+            const hLines = wrapCanvasText(ctx, hotelStr, CONTENT_W - 40);
+            const hBoxH = 18 + hLines.length * 30;
+            if (cursorY + hBoxH > BOTTOM_Y) {
+              startNewPage();
+              drawDayHeader(d, true);
+            }
+            drawRoundRectPath(ctx, PAD_X, cursorY, CONTENT_W, hBoxH, 10);
+            ctx.fillStyle = '#F1F5F9';
+            ctx.fill();
+            ctx.lineWidth = 1.8;
+            ctx.strokeStyle = '#94A3B8';
+            ctx.stroke();
+            let ty = cursorY + 10;
+            ctx.fillStyle = '#1E293B';
+            for (const ln of hLines) { ctx.fillText(ln, PAD_X + 18, ty); ty += 30; }
+            cursorY += hBoxH + 12;
+          }
+
+          for (const it of (d.items || [])) {
+            const headStr = `${it.time || ''}  [${it.category || '行程'}]  ${it.title || ''}${it.cost ? '  —  ' + it.cost : ''}`;
+            const subStr = [it.address ? `📍 ${it.address}` : '', it.transport ? `🚆 ${it.transport}` : ''].filter(Boolean).join('   ｜   ');
+            const descStr = it.desc || '';
+
+            ctx.font = `bold 23px ${FONT_FAMILY}`;
+            const headLines = wrapCanvasText(ctx, headStr, CONTENT_W - 40);
+            ctx.font = `20px ${FONT_FAMILY}`;
+            const subLines = subStr ? wrapCanvasText(ctx, subStr, CONTENT_W - 40) : [];
+            const descLines = descStr ? wrapCanvasText(ctx, descStr, CONTENT_W - 40) : [];
+
+            const cardH = 16 + headLines.length * 32 + (subLines.length ? 4 + subLines.length * 28 : 0) + (descLines.length ? 4 + descLines.length * 28 : 0) + 12;
+            if (cursorY + cardH > BOTTOM_Y) {
+              startNewPage();
+              drawDayHeader(d, true);
+            }
+
+            drawRoundRectPath(ctx, PAD_X, cursorY, CONTENT_W, cardH, 10);
+            ctx.fillStyle = '#FFFDF7';
+            ctx.fill();
+            ctx.lineWidth = 1.8;
+            ctx.strokeStyle = '#CBD5E1';
+            ctx.stroke();
+
+            let iy = cursorY + 14;
+            ctx.font = `bold 23px ${FONT_FAMILY}`;
+            ctx.fillStyle = '#0F172A';
+            for (const ln of headLines) { ctx.fillText(ln, PAD_X + 20, iy); iy += 32; }
+
+            ctx.font = `20px ${FONT_FAMILY}`;
+            if (subLines.length) {
+              iy += 4;
+              ctx.fillStyle = '#475569';
+              for (const ln of subLines) { ctx.fillText(ln, PAD_X + 20, iy); iy += 28; }
+            }
+            if (descLines.length) {
+              iy += 4;
+              ctx.fillStyle = '#334155';
+              for (const ln of descLines) { ctx.fillText(ln, PAD_X + 20, iy); iy += 28; }
+            }
+            cursorY += cardH + 10;
+          }
+          cursorY += 14;
+        }
+
+        if (state && state.memo) {
+          ctx.font = `21px ${FONT_FAMILY}`;
+          const memoLines = wrapCanvasText(ctx, state.memo, CONTENT_W - 40);
+          const memoH = 52 + memoLines.length * 30 + 16;
+          if (cursorY + memoH > BOTTOM_Y) startNewPage();
+          drawRoundRectPath(ctx, PAD_X, cursorY, CONTENT_W, memoH, 12);
+          ctx.fillStyle = '#FFFDF7';
+          ctx.fill();
+          ctx.lineWidth = 2;
+          ctx.strokeStyle = '#2D3A4A';
+          ctx.stroke();
+          ctx.font = `bold 24px ${FONT_FAMILY}`;
+          ctx.fillStyle = '#1E293B';
+          ctx.fillText('📝 旅程備註', PAD_X + 20, cursorY + 14);
+          let my = cursorY + 52;
+          ctx.font = `21px ${FONT_FAMILY}`;
+          ctx.fillStyle = '#334155';
+          for (const ln of memoLines) { ctx.fillText(ln, PAD_X + 20, my); my += 30; }
+        }
+
+        // 頁尾頁碼 + 編碼每頁 JPEG
+        const jpegPages = pages.map((pg, idx) => {
+          const pCtx = pg.getContext('2d');
+          pCtx.font = `20px ${FONT_FAMILY}`;
+          pCtx.fillStyle = '#64748B';
+          const footer = `第 ${idx + 1} / ${pages.length} 頁  ·  旅遊筆記行程表`;
+          const fw = pCtx.measureText(footer).width;
+          pCtx.fillText(footer, (PAGE_W - fw) / 2, PAGE_H - 64);
+
+          const dataUrl = pg.toDataURL('image/jpeg', 0.9);
+          const b64 = dataUrl.split(',')[1];
+          const bin = atob(b64);
+          const bytes = new Uint8Array(bin.length);
+          for (let k = 0; k < bin.length; k++) bytes[k] = bin.charCodeAt(k);
+          return bytes;
+        });
+
+        const pdfBytes = buildPdfFromJpegPages(jpegPages, PAGE_W, PAGE_H);
+        const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+        const url = URL.createObjectURL(blob);
+        const safeName = String((state && (state.cityKey || state.title)) || 'trip').replace(/[\\/:*?"<>|]/g, '_');
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `${safeName}_行程表.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 30000);
+        showToast(`已轉存 PDF 檔案（共 ${pages.length} 頁 A4）！`);
       }
 
       // ── URL 壓縮分享連結（gzip + base64url）──
@@ -5746,71 +5948,15 @@
           }
         });
         document.getElementById('btnExportIcs').addEventListener('click', exportTripIcs);
-        const openPrintPreviewFallback = (html) => {
-          const bodyEl = document.getElementById('printPreviewBody');
-          if (bodyEl) bodyEl.innerHTML = html || buildPrintView();
-          openModalById('printPreviewModal');
-        };
-        const triggerPrintNow = (allowFallbackModal) => {
-          let html = '';
-          try { html = buildPrintView(); } catch (err) {
-            showToast('建立列印內容時發生錯誤');
-            return;
-          }
-          let beforePrintFired = false;
-          const onBeforePrint = () => { beforePrintFired = true; };
-          window.addEventListener('beforeprint', onBeforePrint, { once: true });
-          const t0 = Date.now();
-          let printThrew = false;
-          try {
-            if (typeof window.print === 'function') window.print();
-            else printThrew = true;
-          } catch (err) {
-            printThrew = true;
-          }
-          const elapsed = Date.now() - t0;
-          if (printThrew) {
-            window.removeEventListener('beforeprint', onBeforePrint);
-            openPrintPreviewFallback(html);
-            return;
-          }
-          if (allowFallbackModal) {
-            setTimeout(() => {
-              window.removeEventListener('beforeprint', onBeforePrint);
-              if (!beforePrintFired && elapsed < 120) {
-                openPrintPreviewFallback(html);
-              }
-            }, 450);
-          }
-        };
-        document.getElementById('btnPrintPdf').addEventListener('click', (e) => {
-          e.stopPropagation();
+        document.getElementById('btnExportPdf').addEventListener('click', () => {
           moreMenu.classList.add('hidden');
           moreBtn.setAttribute('aria-expanded', 'false');
-          triggerPrintNow(true);
+          try {
+            exportTripPdf();
+          } catch (err) {
+            showToast('轉存 PDF 失敗，請再試一次');
+          }
         });
-        document.getElementById('btnClosePrintPreviewModal').addEventListener('click', () => closeModalById('printPreviewModal'));
-        document.getElementById('btnPrintNowInModal').addEventListener('click', () => triggerPrintNow(false));
-        document.getElementById('btnPrintNewTab').addEventListener('click', () => {
-          const htmlDoc = buildPrintableHtmlDocument(buildPrintView(), true);
-          const blob = new Blob([htmlDoc], { type: 'text/html;charset=utf-8' });
-          const url = URL.createObjectURL(blob);
-          const win = window.open(url, '_blank');
-          if (!win) showToast('瀏覽器阻擋開新分頁，請改點「下載離線可列印檔」');
-          setTimeout(() => URL.revokeObjectURL(url), 60000);
-        });
-        document.getElementById('btnDownloadPrintHtml').addEventListener('click', () => {
-          const htmlDoc = buildPrintableHtmlDocument(buildPrintView(), false);
-          const blob = new Blob([htmlDoc], { type: 'text/html;charset=utf-8' });
-          const url = URL.createObjectURL(blob);
-          const a = document.createElement('a');
-          a.href = url;
-          a.download = `${(state && state.cityKey) || 'trip'}_printable.html`;
-          a.click();
-          setTimeout(() => URL.revokeObjectURL(url), 10000);
-          showToast('已下載可列印行程表 (.html)，用瀏覽器開啟即可列印 / 存 PDF');
-        });
-        window.addEventListener('beforeprint', buildPrintView);
 
         // 規劃卡開關
         const plannerEl = document.getElementById('promptSection');
