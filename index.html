@@ -4581,9 +4581,67 @@
           default: return { bg: 'bg-[#F7D47A]', icon: '✨' };
         }
       }
-      function getDirectionsUrl(query) {
+      let userOriginCoords = null;
+      try {
+        const rawGeo = sessionStorage.getItem('tripcraft_geo_v1');
+        if (rawGeo) {
+          const parsedGeo = JSON.parse(rawGeo);
+          if (parsedGeo && Number.isFinite(parsedGeo.lat) && Number.isFinite(parsedGeo.lng) && (Date.now() - (parsedGeo.ts || 0)) < 5 * 60 * 1000) {
+            userOriginCoords = { lat: parsedGeo.lat, lng: parsedGeo.lng };
+          }
+        }
+      } catch (e) {}
+
+      function getCachedOriginCoords() {
+        return (userOriginCoords && Number.isFinite(userOriginCoords.lat) && Number.isFinite(userOriginCoords.lng)) ? userOriginCoords : null;
+      }
+
+      function saveOriginCoords(lat, lng) {
+        if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+        userOriginCoords = { lat: Number(lat.toFixed(6)), lng: Number(lng.toFixed(6)) };
+        try { sessionStorage.setItem('tripcraft_geo_v1', JSON.stringify({ ...userOriginCoords, ts: Date.now() })); } catch (e) {}
+        return userOriginCoords;
+      }
+
+      function requestOriginCoords(timeoutMs = 2500) {
+        return new Promise((resolve) => {
+          const existing = getCachedOriginCoords();
+          if (existing) { resolve(existing); return; }
+          if (!navigator.geolocation) { resolve(null); return; }
+          let settled = false;
+          const finish = (val) => { if (!settled) { settled = true; resolve(val); } };
+          const timer = setTimeout(() => finish(null), timeoutMs + 300);
+          navigator.geolocation.getCurrentPosition(
+            (pos) => {
+              clearTimeout(timer);
+              finish(saveOriginCoords(pos.coords.latitude, pos.coords.longitude));
+            },
+            () => {
+              clearTimeout(timer);
+              finish(null);
+            },
+            { enableHighAccuracy: false, timeout: timeoutMs, maximumAge: 180000 }
+          );
+        });
+      }
+
+      let geoPermissionState = 'prompt';
+      function silentWarmupOriginCoords() {
+        if (!navigator.geolocation) return;
+        if (!navigator.permissions || !navigator.permissions.query) return;
+        navigator.permissions.query({ name: 'geolocation' }).then((status) => {
+          if (!status) return;
+          geoPermissionState = status.state || 'prompt';
+          status.onchange = () => { geoPermissionState = status.state || 'prompt'; };
+          if (status.state === 'granted' && !getCachedOriginCoords()) requestOriginCoords(2500);
+        }).catch(() => {});
+      }
+
+      function getDirectionsUrl(query, coordsOverride) {
         const mode = state.transportMode === 'drive' ? 'driving' : (state.transportMode === 'hsr' || state.transportMode === 'train') ? 'transit' : '';
-        return 'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(query || state.cityKey) + (mode ? '&travelmode=' + mode : '');
+        const coords = coordsOverride || getCachedOriginCoords();
+        const originPart = coords ? `&origin=${encodeURIComponent(coords.lat + ',' + coords.lng)}` : '';
+        return 'https://www.google.com/maps/dir/?api=1' + originPart + '&destination=' + encodeURIComponent(query || state.cityKey) + '&dir_action=navigate' + (mode ? '&travelmode=' + mode : '');
       }
       function getMapsUrl(query) { return 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(query || state.cityKey); }
       function wmoToInfo(code) {
@@ -4846,7 +4904,7 @@
                           <p class="mt-1">${escapeHtml(h.highlights)}</p>
                         </div>
                         <div class="flex items-center justify-between gap-2 pt-2 border-t border-dashed border-[#2D3A4A]/20">
-                          <a href="${getDirectionsUrl(h.name + ' ' + h.address)}" target="_blank" rel="noopener noreferrer" class="ext-nav-link font-bold underline text-xs">📍 導航</a>
+                          <a href="${getDirectionsUrl(hQuery)}" data-nav-dest="${escapeHtml(hQuery)}" target="_blank" rel="noopener noreferrer" class="ext-nav-link font-bold underline text-xs">📍 導航</a>
                           <button type="button" class="pick-day-hotel-btn ehon-pill px-3 py-1 font-bold text-xs ${isSelected ? 'bg-[#B3D9A6]' : 'bg-[#F7D47A]'}" data-hotel-idx="${hIdx}">${isSelected ? '✓ 目前入住這間' : '選擇此飯店'}</button>
                         </div>
                       </div>
@@ -4886,6 +4944,7 @@
                     const fb = makeEhonPhotoFallback('美食', f.name);
                     const fQuery = `${f.name} ${dayCity}`.trim();
                     const url = getMapsUrl(fQuery);
+                    const navFoodUrl = getDirectionsUrl(fQuery);
                     return `
                       <div class="ehon-card-soft overflow-hidden bg-[#FFFDF7] flex flex-col gap-2">
                         <div class="h-28 w-full border-b-2 border-[#2D3A4A] overflow-hidden bg-[#B3D9A6]/25 relative">
@@ -4895,7 +4954,7 @@
                         <div class="px-2.5 pb-2.5 min-w-0 flex-1 text-xs space-y-1">
                           <div class="font-bold truncate">${escapeHtml(f.name)}</div>
                           <div class="text-[11px] text-muted truncate">順遊：${escapeHtml(f.from)}</div>
-                          <a href="${url}" target="_blank" rel="noopener noreferrer" class="ext-nav-link inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#F7D47A] border border-[#2D3A4A] text-[11px] font-bold">📍 Google 地圖導航</a>
+                          <a href="${navFoodUrl}" data-nav-dest="${escapeHtml(fQuery)}" target="_blank" rel="noopener noreferrer" class="ext-nav-link inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#F7D47A] border border-[#2D3A4A] text-[11px] font-bold">📍 Google 地圖導航</a>
                         </div>
                       </div>
                     `;
@@ -5040,8 +5099,9 @@
                         <div class="font-bold">🍜 附近美食推薦（點擊直接導航）：</div>
                         <div class="flex flex-wrap gap-1.5">
                           ${String(item.nearbyFood).split(/[、，,/]+/).map(f => f.trim()).filter(Boolean).map(foodName => {
-                            const foodUrl = getMapsUrl(foodName + ' ' + dayCity);
-                            return `<a href="${foodUrl}" target="_blank" rel="noopener noreferrer" class="ext-nav-link inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#FFFDF7] hover:bg-[#B3D9A6] border border-[#2D3A4A] font-bold">📍 ${escapeHtml(foodName)}</a>`;
+                            const foodQuery = `${foodName} ${dayCity}`.trim();
+                            const foodUrl = getDirectionsUrl(foodQuery);
+                            return `<a href="${foodUrl}" data-nav-dest="${escapeHtml(foodQuery)}" target="_blank" rel="noopener noreferrer" class="ext-nav-link inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#FFFDF7] hover:bg-[#B3D9A6] border border-[#2D3A4A] font-bold">📍 ${escapeHtml(foodName)}</a>`;
                           }).join('')}
                         </div>
                       </div>
@@ -5056,7 +5116,7 @@
                     <div class="flex items-center gap-1.5 flex-wrap">
                       <button type="button" class="item-log-expense-btn ehon-pill px-2.5 py-1 bg-[#B3D9A6]/55 hover:bg-[#B3D9A6] font-bold" data-id="${item.id}" title="將此行程帶入開銷記帳">💰 記帳</button>
                       <button type="button" class="item-regen-btn ehon-pill px-2.5 py-1 bg-[#F7D47A] font-bold" data-id="${item.id}">↻ 換掉</button>
-                      <a href="${getDirectionsUrl(navQuery)}" target="_blank" rel="noopener noreferrer" class="ext-nav-link ehon-pill px-2.5 py-1 bg-[#96CBE3]/65 font-bold">📍 導航</a>
+                      <a href="${getDirectionsUrl(navQuery)}" data-nav-dest="${escapeHtml(navQuery)}" target="_blank" rel="noopener noreferrer" class="ext-nav-link ehon-pill px-2.5 py-1 bg-[#96CBE3]/65 font-bold">📍 導航</a>
                     </div>
                   </div>
 
@@ -5461,7 +5521,7 @@
           <div class="tabular-nums"><strong>💵 參考：</strong>${escapeHtml(h.cost)}</div>
           ${h.bookingRef ? `<div><strong>🎫 訂房代號：</strong>${escapeHtml(h.bookingRef)}</div>` : ''}
           <p class="bg-[#F0A195]/20 border-2 border-[#2D3A4A] rounded-2xl p-2.5">${escapeHtml(h.highlights)}</p>
-          <a href="${hotelMapsUrl}" target="_blank" rel="noopener noreferrer" class="ext-nav-link inline-block font-bold underline">查看飯店地圖與實景照片 →</a>
+          <a href="${getDirectionsUrl(hPhotoQuery)}" data-nav-dest="${escapeHtml(hPhotoQuery)}" target="_blank" rel="noopener noreferrer" class="ext-nav-link inline-block font-bold underline">📍 導航前往飯店 →</a>
         `;
         hydrateRealPhotos(hotelBody);
 
@@ -6790,14 +6850,46 @@
           document.getElementById('departAirportSelect').focus();
         });
 
-        // Google Maps 連結在手機與 iframe 的友善處理
+        // Google Maps 連結在手機、目前位置定位與 iframe 的友善處理
+        silentWarmupOriginCoords();
         document.addEventListener('click', (e) => {
           const link = e.target.closest('a[href*="google.com/maps"]');
           if (!link) return;
-          const url = link.getAttribute('href') || '';
+          const navDest = link.getAttribute('data-nav-dest');
           const isMobile = /iPad|iPhone|iPod|Android/i.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
           let inIframe = false;
           try { inIframe = window.self !== window.top; } catch (err) { inIframe = true; }
+
+          if (navDest) {
+            const cachedCoords = getCachedOriginCoords();
+            if (cachedCoords) {
+              link.setAttribute('href', getDirectionsUrl(navDest, cachedCoords));
+            } else if (!inIframe && !isMobile && navigator.geolocation && geoPermissionState !== 'denied') {
+              e.preventDefault();
+              if (geoPermissionState === 'granted') {
+                const pendingTab = window.open('about:blank', '_blank');
+                if (pendingTab) { try { pendingTab.opener = null; } catch (_) {} }
+                requestOriginCoords(2500).then((coords) => {
+                  const targetUrl = getDirectionsUrl(navDest, coords);
+                  if (pendingTab && !pendingTab.closed) pendingTab.location.href = targetUrl;
+                  else window.open(targetUrl, '_blank', 'noopener,noreferrer');
+                });
+              } else {
+                showToast('📍 請允許瀏覽器存取位置，以從「目前位置」開始導航…');
+                requestOriginCoords(4000).then((coords) => {
+                  const targetUrl = getDirectionsUrl(navDest, coords);
+                  link.setAttribute('href', targetUrl);
+                  const opened = window.open(targetUrl, '_blank', 'noopener,noreferrer');
+                  if (!opened) showToast('瀏覽器攔截了彈出視窗，請再點擊一次「📍 導航」即可開啟');
+                });
+              }
+              return;
+            } else if (navigator.geolocation && geoPermissionState !== 'denied') {
+              requestOriginCoords(2500);
+            }
+          }
+
+          const url = link.getAttribute('href') || '';
           if (!inIframe) {
             if (isMobile) link.removeAttribute('target');
             return;
