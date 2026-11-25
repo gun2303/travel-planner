@@ -6185,15 +6185,43 @@
         renderFlights(); renderHotelCard(); renderExpenses(); renderNotesAndChecklist(); renderEssentials();
       }
 
+      function parseChineseNumeral(str) {
+        const s = String(str || '').trim();
+        if (!s) return 0;
+        const map = { '一': 1, '二': 2, '兩': 2, '三': 3, '四': 4, '五': 5, '六': 6, '七': 7, '八': 8, '九': 9, '十': 10 };
+        if (s === '十') return 10;
+        if (s.length === 1) return map[s] || 0;
+        if (s.startsWith('十') && s.length === 2) return 10 + (map[s[1]] || 0);
+        if (s.endsWith('十') && s.length === 2) return (map[s[0]] || 0) * 10;
+        if (s.length === 3 && s[1] === '十') return (map[s[0]] || 0) * 10 + (map[s[2]] || 0);
+        return 0;
+      }
+
+      function extractDayCountFromText(rawText, minDays = 1, maxDays = 21) {
+        const stripped = String(rawText || '').replace(/(?:\d{4}[\/\-年])?\d{1,2}[\/\-月]\d{1,2}[日號]?/g, ' ');
+        const mNum = stripped.match(/(\d+)\s*[天日]/);
+        if (mNum) {
+          const n = parseInt(mNum[1], 10);
+          if (!isNaN(n) && n > 0) return Math.max(minDays, Math.min(maxDays, n));
+        }
+        const mZh = stripped.match(/([一二兩三四五六七八九十]{1,3})\s*(?:天|日)/);
+        if (mZh) {
+          const n = parseChineseNumeral(mZh[1]);
+          if (n > 0) return Math.max(minDays, Math.min(maxDays, n));
+        }
+        return 0;
+      }
+
       function parseMultiLegRoute(text) {
         const allCities = Array.from(new Set(
           Object.keys(CITY_COORDS).concat(['宜蘭', '墾丁', '南投', '嘉義', '屏東', '苗栗', '新竹', '彰化', '桃園', '京都', '東京', '大阪', '北海道', '首爾', '曼谷'])
         ));
-        const totalDaysM = text.match(/(?:共|總共|為期|全程)\s*(\d+)\s*天(?:\s*\d+\s*夜)?/) || text.match(/(\d+)\s*天\s*\d+\s*夜/);
-        const allDayMentions = text.match(/\d+\s*天/g) || [];
-        const singleDaysM = !totalDaysM && allDayMentions.length === 1 ? text.match(/(\d+)\s*天/) : null;
+        const safeText = String(text || '').replace(/(?:\d{4}[\/\-年])?\d{1,2}[\/\-月]\d{1,2}[日號]?/g, ' ');
+        const totalDaysM = safeText.match(/(?:共|總共|為期|全程)\s*(\d+)\s*[天日](?:\s*\d+\s*夜)?/) || safeText.match(/(\d+)\s*[天日]\s*\d+\s*夜/);
+        const allDayMentions = safeText.match(/\d+\s*[天日]/g) || [];
+        const singleDaysM = !totalDaysM && allDayMentions.length === 1 ? safeText.match(/(\d+)\s*[天日]/) : null;
         const totalPhrase = totalDaysM ? totalDaysM[0] : (singleDaysM ? singleDaysM[0] : '');
-        const overallTotalDays = (totalDaysM || singleDaysM) ? Math.max(2, Math.min(21, parseInt((totalDaysM || singleDaysM)[1], 10))) : 0;
+        const overallTotalDays = (totalDaysM || singleDaysM) ? Math.max(2, Math.min(21, parseInt((totalDaysM || singleDaysM)[1], 10))) : extractDayCountFromText(safeText, 2, 21);
 
         let explicitReturnHome = '';
         const retMatch = text.match(/(?:再回到|最後回到|然後回到|然後回|最後回|再回|回到|回)\s*([一-龥A-Za-z]{2,4})/);
@@ -6230,7 +6258,7 @@
             }
             if (idx === 0 && fromCity) startOrigin = fromCity;
             const segNoTotal = totalPhrase ? s.replace(totalPhrase, '') : s;
-            const daysM = segNoTotal.match(/(\d+)\s*天/);
+            const daysM = segNoTotal.match(/(\d+)\s*[天日]/);
             const legDays = daysM ? parseInt(daysM[1], 10) : 0;
             if (toCity) legs.push({ city: toCity, days: legDays, returnHome });
           });
@@ -6433,8 +6461,7 @@
         const depDate = document.getElementById('departDateInput').value;
         let retDate = document.getElementById('returnDateInput').value;
         if (depDate && !retDate) {
-          const pm = text.match(/(\d+)\s*天/);
-          const spanDays = pm ? Math.max(1, Math.min(21, parseInt(pm[1], 10))) : ((state.days && state.days.length) || 5);
+          const spanDays = extractDayCountFromText(text, 1, 21) || ((state.days && state.days.length) || 5);
           retDate = computeReturnDateStr(depDate, spanDays);
           if (retDate) document.getElementById('returnDateInput').value = retDate;
         }
@@ -6482,8 +6509,7 @@
             return;
           }
 
-          const pmDays = normText.match(/(\d+)\s*天/);
-          let riDays = pmDays ? Math.max(2, Math.min(21, parseInt(pmDays[1], 10))) : 0;
+          let riDays = extractDayCountFromText(normText, 2, 21);
           if (!riDays && depDate && retDate) {
             const diff = Math.round((new Date(retDate + 'T00:00:00') - new Date(depDate + 'T00:00:00')) / 86400000) + 1;
             if (!isNaN(diff) && diff >= 2 && diff <= 21) riDays = diff;
@@ -6596,7 +6622,7 @@
         const routeMatch = text.match(/(?:從\s*)?([\u4e00-\u9fa5A-Za-z]{2,8})\s*(?:到|去|往|->|→)\s*([\u4e00-\u9fa5A-Za-z]{2,10})/);
         if (routeMatch) {
           detectedOrigin = routeMatch[1].replace(/^(從|由)/, '').trim();
-          detectedCity = routeMatch[2].replace(/(自由行|旅遊|之旅|行程|玩|看|逛|一日遊|二日遊|三日遊|\d+\s*天).*$/, '').trim();
+          detectedCity = routeMatch[2].replace(/(自由行|旅遊|之旅|行程|玩|看|逛|[一二兩三四五六七八九十\d]+\s*[天日]遊?).*$/, '').trim();
         }
         if (!detectedCity) {
           const allKnown = Object.keys(CITY_COORDS).concat(['京都', '首爾', '宜蘭', '台東', '墾丁', '蘭嶼', '綠島', '小琉球', '清邁', '新加坡', '香港', '巴黎']);
@@ -6630,8 +6656,7 @@
           if (retAir === 'AUTO' || retAir === 'NONE' || !retAir || (mappedAir && state && state.cityKey !== detectedCity)) retAir = mappedAir || 'KIX';
         }
 
-        const mDays = text.match(/(\d+)\s*天/);
-        let detectedDays = mDays ? Math.max(1, Math.min(14, parseInt(mDays[1], 10))) : null;
+        let detectedDays = extractDayCountFromText(text, 1, 14) || null;
         if (!detectedDays && finalPromptDepDate && finalPromptRetDate) {
           const diff = Math.round((new Date(finalPromptRetDate + 'T00:00:00') - new Date(finalPromptDepDate + 'T00:00:00')) / 86400000) + 1;
           if (!isNaN(diff) && diff >= 1 && diff <= 14) detectedDays = diff;
@@ -7686,8 +7711,7 @@
           if (dd) state.departDate = dd;
           if (e && e.target && e.target.id === 'departDateInput' && dd) {
             const promptVal = (document.getElementById('chatPromptInput') && document.getElementById('chatPromptInput').value) || '';
-            const pm = promptVal.match(/(\d+)\s*天/);
-            const tripDays = pm ? Math.max(1, Math.min(21, parseInt(pm[1], 10))) : ((state.days && state.days.length) || 3);
+            const tripDays = extractDayCountFromText(promptVal, 1, 21) || ((state.days && state.days.length) || 3);
             const autoRd = computeReturnDateStr(dd, tripDays);
             if (autoRd && rdEl) {
               rdEl.value = autoRd; state.returnDate = autoRd;
