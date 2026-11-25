@@ -434,10 +434,10 @@
         <!-- 台灣環島設定：出發地點 ＋ 途中停留縣市 -->
         <div id="roundIslandBlock" class="hidden space-y-3 p-3.5 rounded-2xl bg-[#96CBE3]/20 border-2 border-[#2D3A4A]">
           <div class="flex flex-wrap items-center justify-between gap-2">
-            <div class="text-xs font-bold">🔄 台灣環島規劃設定（請填寫出發地點與途中停留縣市）</div>
+            <div class="text-xs font-bold">🔄 台灣環島規劃設定（依環島地理位置順序自動排序，避免繞遠路）</div>
             <div class="flex items-center gap-1.5 text-[11px]">
-              <button type="button" id="btnRoundPresetCCW" class="ehon-pill px-2 py-0.5 bg-[#FFFDF7] hover:bg-[#F7D47A] font-bold">逆時針參考</button>
-              <button type="button" id="btnRoundPresetCW" class="ehon-pill px-2 py-0.5 bg-[#FFFDF7] hover:bg-[#F7D47A] font-bold">順時針參考</button>
+              <button type="button" id="btnRoundDirCCW" class="ehon-pill px-2.5 py-0.5 bg-[#F7D47A] font-bold">🔄 逆時針</button>
+              <button type="button" id="btnRoundDirCW" class="ehon-pill px-2.5 py-0.5 bg-[#FFFDF7] hover:bg-[#F7D47A]/60 font-bold">🔁 順時針</button>
               <button type="button" id="btnRoundStopsReset" class="ehon-pill px-2 py-0.5 bg-[#FFFDF7] hover:bg-[#F0A195]/40 font-bold">重選停留縣市</button>
             </div>
           </div>
@@ -466,7 +466,7 @@
               </select>
             </div>
             <div class="sm:col-span-2 min-w-0">
-              <div class="text-xs font-bold mb-1.5">📍 途中要停留的縣市 <span class="text-[#B4533F]">（必選，依點選順序排列）</span></div>
+              <div class="text-xs font-bold mb-1.5">📍 途中要停留的縣市 <span class="text-[#B4533F]">（必選，依地理順／逆時針自動排序）</span></div>
               <div id="roundIslandStopChips" class="flex flex-wrap gap-1.5"></div>
             </div>
           </div>
@@ -6304,21 +6304,44 @@
         showToast(toastMsg);
       }
 
-      const ROUND_ISLAND_CITIES = ['台北', '新北', '基隆', '桃園', '新竹', '苗栗', '台中', '彰化', '南投', '雲林', '嘉義', '台南', '高雄', '屏東', '墾丁', '宜蘭', '花蓮', '台東'];
-      const ROUND_ISLAND_CCW_RING = ['台北', '台中', '台南', '高雄', '台東', '花蓮', '宜蘭'];
+      // 台灣本島地理環線順序（順時針：台北→東岸→南端→西岸→台北；逆時針即為反轉）
+      const ROUND_ISLAND_CW_RING = ['台北', '新北', '基隆', '宜蘭', '花蓮', '台東', '墾丁', '屏東', '高雄', '台南', '嘉義', '雲林', '南投', '彰化', '台中', '苗栗', '新竹', '桃園'];
+      const ROUND_ISLAND_CITIES = ROUND_ISLAND_CW_RING;
       let roundIslandStops = [];
+      let roundIslandDirection = 'ccw'; // 'ccw' 逆時針 | 'cw' 順時針
 
       function isRoundIslandPrompt(text) {
         return /環島|環台|環遊台灣|環遊臺灣|全島/.test(String(text || ''));
       }
 
+      function getRoundIslandRingOrder(origin, direction) {
+        const base = direction === 'cw' ? ROUND_ISLAND_CW_RING.slice() : ROUND_ISLAND_CW_RING.slice().reverse();
+        const idx = origin ? base.indexOf(origin) : -1;
+        if (idx === -1) return base;
+        return base.slice(idx + 1).concat(base.slice(0, idx));
+      }
+
+      function sortRoundIslandStopsByGeo(stops, origin, direction) {
+        const uniq = [];
+        (stops || []).forEach((c) => {
+          if (c && c !== origin && !uniq.includes(c)) uniq.push(c);
+        });
+        const ring = getRoundIslandRingOrder(origin, direction);
+        return uniq.sort((a, b) => {
+          const ia = ring.indexOf(a);
+          const ib = ring.indexOf(b);
+          return (ia === -1 ? 999 : ia) - (ib === -1 ? 999 : ib);
+        });
+      }
+
       function extractRoundIslandFromText(rawText) {
         const norm = String(rawText || '').replace(/臺/g, '台');
+        const direction = norm.includes('順時針') ? 'cw' : (norm.includes('逆時針') ? 'ccw' : '');
         let origin = '';
         const originPatterns = [
-          /(?:從|由)\s*([一-龥]{2,3})\s*(?:出發|啟程|開始)/,
+          /(?:從|由)\s*([一-龥]{2,3})\s*(?:出發|啟程|開始|順時針|逆時針|環島|環台)/,
           /出發地點?[為是：:\s]*([一-龥]{2,3})/,
-          /([一-龥]{2,3})\s*出發/
+          /([一-龥]{2,3})\s*(?:出發|啟程)/
         ];
         for (const pat of originPatterns) {
           const m = norm.match(pat);
@@ -6343,40 +6366,50 @@
         if (!origin && ordered.length >= 2 && /(→|->|到|往)/.test(norm)) {
           origin = ordered[0];
         }
-        const stops = [];
-        ordered.forEach((c) => {
-          if (c !== origin && !stops.includes(c)) stops.push(c);
-        });
-        return { origin, stops };
+        const rawStops = ordered.filter(c => c !== origin);
+        const stops = sortRoundIslandStopsByGeo(rawStops, origin, direction || roundIslandDirection);
+        return { origin, stops, direction };
       }
 
       function renderRoundIslandUI() {
         const chipsEl = document.getElementById('roundIslandStopChips');
         const previewEl = document.getElementById('roundIslandRoutePreview');
         const origEl = document.getElementById('roundIslandOriginSelect');
+        const btnCCW = document.getElementById('btnRoundDirCCW');
+        const btnCW = document.getElementById('btnRoundDirCW');
         if (!chipsEl || !previewEl || !origEl) return;
         const orig = origEl.value || '';
-        roundIslandStops = roundIslandStops.filter((c, i, arr) => c && c !== orig && arr.indexOf(c) === i);
+        roundIslandStops = sortRoundIslandStopsByGeo(roundIslandStops, orig, roundIslandDirection);
 
-        chipsEl.innerHTML = ROUND_ISLAND_CITIES.map((city) => {
+        if (btnCCW && btnCW) {
+          btnCCW.className = `ehon-pill px-2.5 py-0.5 font-bold ${roundIslandDirection === 'ccw' ? 'bg-[#F7D47A]' : 'bg-[#FFFDF7] hover:bg-[#F7D47A]/60'}`;
+          btnCW.className = `ehon-pill px-2.5 py-0.5 font-bold ${roundIslandDirection === 'cw' ? 'bg-[#F7D47A]' : 'bg-[#FFFDF7] hover:bg-[#F7D47A]/60'}`;
+        }
+
+        const displayCities = orig
+          ? [orig, ...getRoundIslandRingOrder(orig, roundIslandDirection)]
+          : getRoundIslandRingOrder('', roundIslandDirection);
+
+        chipsEl.innerHTML = displayCities.map((city) => {
           const orderIdx = roundIslandStops.indexOf(city);
           const isOrigin = city === orig;
           const isPicked = orderIdx !== -1;
           return `<button type="button" data-ri-city="${city}" ${isOrigin ? 'disabled' : ''} class="ri-stop-chip ehon-pill px-2.5 py-1 text-xs font-bold transition-colors ${isOrigin ? 'bg-[#E5E7EB] opacity-55 cursor-not-allowed' : isPicked ? 'bg-[#B3D9A6]' : 'bg-[#FFFDF7] hover:bg-[#F7D47A]/60'}">${isPicked ? `<span class="inline-block mr-1 px-1 rounded-full bg-[#2D3A4A] text-[#FFFDF7] text-[10px]">${orderIdx + 1}</span>` : ''}${city}${isOrigin ? ' (起點)' : ''}</button>`;
         }).join('');
 
+        const dirLabel = roundIslandDirection === 'cw' ? '順時針' : '逆時針';
         if (!orig && roundIslandStops.length === 0) {
           previewEl.className = 'text-xs font-bold bg-[#FFFDF7] border border-[#2D3A4A] rounded-xl px-3 py-2 text-[#B4533F]';
           previewEl.textContent = '⚠️ 請先選擇「出發地點」，並點選至少 1 個「途中要停留的縣市」。';
         } else if (!orig) {
           previewEl.className = 'text-xs font-bold bg-[#FFFDF7] border border-[#2D3A4A] rounded-xl px-3 py-2 text-[#B4533F]';
-          previewEl.textContent = `⚠️ 已選停留縣市（${roundIslandStops.join(' → ')}），請再選擇「出發地點」。`;
+          previewEl.textContent = `⚠️ 已選停留縣市（依${dirLabel}地理順序：${roundIslandStops.join(' → ')}），請再選擇「出發地點」。`;
         } else if (roundIslandStops.length === 0) {
           previewEl.className = 'text-xs font-bold bg-[#FFFDF7] border border-[#2D3A4A] rounded-xl px-3 py-2 text-[#B4533F]';
-          previewEl.textContent = `⚠️ 已設定出發地「${orig}」，請再點選至少 1 個「途中要停留的縣市」。`;
+          previewEl.textContent = `⚠️ 已設定出發地「${orig}」（${dirLabel}），請再點選至少 1 個「途中要停留的縣市」。`;
         } else {
           previewEl.className = 'text-xs font-bold bg-[#B3D9A6]/35 border border-[#2D3A4A] rounded-xl px-3 py-2 text-[#2D3A4A]';
-          previewEl.textContent = `✅ 環島路線預覽：${[orig, ...roundIslandStops, orig].join(' ➔ ')}（共停靠 ${roundIslandStops.length} 站後返回${orig}）`;
+          previewEl.textContent = `✅ ${dirLabel}地理順路預覽：${[orig, ...roundIslandStops, orig].join(' ➔ ')}（共停靠 ${roundIslandStops.length} 站後返回${orig}）`;
         }
       }
 
@@ -6413,11 +6446,12 @@
           if (riBlock) riBlock.classList.remove('hidden');
 
           const parsedRI = extractRoundIslandFromText(normText);
+          if (parsedRI.direction) roundIslandDirection = parsedRI.direction;
           let riOrigin = (riOrigEl && riOrigEl.value) || (multi && multi.origin) || parsedRI.origin || '';
           let riStops = roundIslandStops.length
             ? roundIslandStops.slice()
             : ((multi && multi.legs && multi.legs.length) ? multi.legs.map(l => l.city) : parsedRI.stops);
-          riStops = riStops.filter((c, i, arr) => c && c !== riOrigin && arr.indexOf(c) === i);
+          riStops = sortRoundIslandStopsByGeo(riStops, riOrigin, roundIslandDirection);
 
           if (riOrigEl && riOrigin && riOrigEl.value !== riOrigin) riOrigEl.value = riOrigin;
           if (riStops.length) roundIslandStops = riStops.slice();
@@ -7531,6 +7565,7 @@
           const riOrigEl = document.getElementById('roundIslandOriginSelect');
           if (riOrigEl) riOrigEl.value = '';
           roundIslandStops = [];
+          roundIslandDirection = 'ccw';
           renderRoundIslandUI();
           const warnEl = document.getElementById('promptInlineWarn');
           if (warnEl) { warnEl.classList.add('hidden'); warnEl.innerHTML = ''; }
@@ -7553,24 +7588,14 @@
           else roundIslandStops.splice(idx, 1);
           renderRoundIslandUI();
         });
-        const applyRoundIslandPreset = (clockwise) => {
-          const origEl = document.getElementById('roundIslandOriginSelect');
-          const orig = (origEl && origEl.value) || '';
-          if (!orig) {
-            showToast('請先選擇「出發地點」，再套用環島方向順序');
-            if (origEl) origEl.focus();
-            return;
-          }
-          const baseRing = clockwise ? ROUND_ISLAND_CCW_RING.slice().reverse() : ROUND_ISLAND_CCW_RING.slice();
-          const idx = baseRing.indexOf(orig);
-          const ordered = idx !== -1
-            ? baseRing.slice(idx + 1).concat(baseRing.slice(0, idx))
-            : baseRing.filter(c => c !== orig);
-          roundIslandStops = ordered.slice(0, 4);
+        document.getElementById('btnRoundDirCCW').addEventListener('click', () => {
+          roundIslandDirection = 'ccw';
           renderRoundIslandUI();
-        };
-        document.getElementById('btnRoundPresetCCW').addEventListener('click', () => applyRoundIslandPreset(false));
-        document.getElementById('btnRoundPresetCW').addEventListener('click', () => applyRoundIslandPreset(true));
+        });
+        document.getElementById('btnRoundDirCW').addEventListener('click', () => {
+          roundIslandDirection = 'cw';
+          renderRoundIslandUI();
+        });
         document.getElementById('btnRoundStopsReset').addEventListener('click', () => {
           roundIslandStops = [];
           renderRoundIslandUI();
