@@ -2732,23 +2732,87 @@
           };
         }
         if (mode === 'drive') {
-          let routeDesc = `${from} → 國道 / 省道 → ${to}`;
           const driveMins = estimateLandMinutes(from, to, 'drive');
-          let driveHours = `${fmtDur(driveMins)}（不含塞車與休息）`;
-          let driveTip = isDomesticTW ? '國道 1 號 / 3 號，可停西螺、清水或關西服務區' : '建議預約市區停車位';
-          let driveCost = '油資與 eTag 通行費約 NT$ 600 - 1,200';
-          if ((from.includes('台北') && to.includes('花蓮')) || (from.includes('花蓮') && to.includes('台北')) || (from.includes('宜蘭') && to.includes('花蓮'))) {
-            routeDesc = `${from} → 國道 5 號（雪山隧道）→ 蘇花改（台 9 線）→ ${to}`;
-            driveTip = '經雪隧接蘇花改，可停蘇澳服務區或台泥 DAKA 園區休息補水';
-            driveCost = '油資與通行費約 NT$ 500 - 800';
-          } else if ((from.includes('花蓮') && to.includes('台東')) || (from.includes('台東') && to.includes('花蓮'))) {
-            routeDesc = `${from} → 台 9 線（花東縱谷）或 台 11 線（花東海岸）→ ${to}`;
-            driveTip = '走台 9 線順遊瑞穗、池上伯朗大道；走台 11 線看太平洋海景與三仙台';
-            driveCost = '油資約 NT$ 450 - 650';
-          } else if ((from.includes('台東') && to.includes('台南')) || (from.includes('台南') && to.includes('台東')) || (from.includes('台東') && to.includes('高雄'))) {
-            routeDesc = `${from} → 台 9 線（南迴公路／草埔森永隧道）→ 國道 3 號 → ${to}`;
-            driveTip = '經南迴公路接南州交流道上國 3，可停大武之心南迴驛站或東山服務區';
-            driveCost = '油資與通行費約 NT$ 600 - 900';
+          const driveHours = `${fmtDur(driveMins)}（不含塞車與休息）`;
+          let routeDesc = `${from} → 國道 / 省道 → ${to}`;
+          let driveTip = isDomesticTW ? '行經國道 / 省道彈性直達，建議出發前確認目的地周邊停車場空位' : '建議預約市區停車位';
+          let driveCost = '油資與 eTag 通行費約 NT$ 500 - 1,000';
+
+          if (isDomesticTW) {
+            const hasPair = (aList, bList) =>
+              (aList.some(k => from.includes(k)) && bList.some(k => to.includes(k))) ||
+              (aList.some(k => to.includes(k)) && bList.some(k => from.includes(k)));
+
+            if (hasPair(['墾丁'], ['台東'])) {
+              routeDesc = `${from} → 台 26 線 → 壽卡／南迴公路（台 9 戊 / 台 9 線）→ ${to}`;
+              driveTip = '經恆春半島／旭海轉壽卡接台 9 線南迴公路，可停壽卡鐵馬驛站、大武之心南迴驛站或金崙／太麻里觀海休息';
+              driveCost = '油資約 NT$ 350 - 550（免國道通行費）';
+            } else if (hasPair(['屏東', '高雄'], ['台東'])) {
+              routeDesc = `${from} → 國道 3 號（南州交流道）→ 台 1 線（楓港）→ 台 9 線（草埔森永隧道／南迴公路）→ ${to}`;
+              driveTip = '經南州下國 3 接楓港進南迴公路，可停品味軒休息站、大武之心南迴驛站或金崙海景咖啡';
+              driveCost = '油資與通行費約 NT$ 450 - 700';
+            } else if (hasPair(['台南', '嘉義', '雲林', '彰化', '台中'], ['台東'])) {
+              routeDesc = `${from} → 國道 3 號 → 台 1 線（楓港）→ 台 9 線（草埔森永隧道／南迴公路）→ ${to}`;
+              driveTip = '經國 3 接楓港進南迴公路，可停東山服務區、品味軒休息站或大武之心南迴驛站補水';
+              driveCost = '油資與通行費約 NT$ 650 - 1,050';
+            } else if (hasPair(['花蓮'], ['台東'])) {
+              routeDesc = `${from} → 台 9 線（花東縱谷）或 台 11 線（花東海岸）→ ${to}`;
+              driveTip = '走台 9 線順遊瑞穗、池上伯朗大道；走台 11 線看太平洋海景與三仙台';
+              driveCost = '油資約 NT$ 450 - 650（免國道通行費）';
+            } else if (hasPair(['宜蘭'], ['花蓮'])) {
+              routeDesc = `${from} → 蘇花改（台 9 線）→ ${to}`;
+              driveTip = '經蘇花改（多區間測速，請依速限行駛），可停蘇澳服務區或台泥 DAKA 園區休息補水';
+              driveCost = '油資約 NT$ 300 - 500（免國道通行費）';
+            } else if (hasPair(['台北', '新北', '基隆', '桃園', '新竹'], ['宜蘭'])) {
+              routeDesc = `${from} → 國道 5 號（雪山隧道）→ ${to}`;
+              driveTip = '經雪山隧道前往蘭陽平原，出發前留意即時路況避開假日尖峰，可停石碇服務區';
+              driveCost = '油資與通行費約 NT$ 250 - 450';
+            } else if (hasPair(['台北', '新北', '基隆', '桃園', '新竹'], ['花蓮'])) {
+              routeDesc = `${from} → 國道 5 號（雪山隧道）→ 蘇花改（台 9 線）→ ${to}`;
+              driveTip = '經雪隧接蘇花改，可停蘇澳服務區或台泥 DAKA 園區休息補水';
+              driveCost = '油資與通行費約 NT$ 500 - 800';
+            } else if (hasPair(['台北', '新北', '基隆', '桃園', '新竹', '宜蘭'], ['台東'])) {
+              routeDesc = `${from} → 國道 5 號 → 蘇花改（台 9 線）→ 花東縱谷 / 海岸（台 9 / 台 11 線）→ ${to}`;
+              driveTip = '經雪隧、蘇花改接花東公路（路途較長建議分段休息），可停蘇澳服務區、台泥 DAKA 或池上休息站';
+              driveCost = '油資與通行費約 NT$ 900 - 1,400';
+            } else if (hasPair(['宜蘭'], ['屏東', '墾丁', '高雄', '台南', '嘉義', '台中', '苗栗', '彰化', '南投'])) {
+              routeDesc = `${from} → 國道 5 號 → 國道 3 號 / 國道 1 號 → ${to}`;
+              driveTip = '經雪隧接國 3 / 國 1 跨區移動，可依距離停靠關西、清水或東山等順路服務區';
+              driveCost = '油資與通行費約 NT$ 600 - 1,200';
+            } else if (hasPair(['花蓮'], ['台中', '南投', '彰化', '苗栗', '雲林', '嘉義', '台南', '高雄', '屏東', '墾丁'])) {
+              routeDesc = `${from} → 蘇花改（或南迴／中橫銜接線）→ ${to}`;
+              driveTip = '花蓮跨西部車程較長（若經南迴或蘇花改請預留休息時間），途中可停台泥 DAKA 園區或蘇澳／大武服務區';
+              driveCost = '油資與通行費約 NT$ 850 - 1,400';
+            } else if (hasPair(['墾丁'], ['屏東', '高雄', '台南'])) {
+              routeDesc = `${from} → 國道 3 號（南州／林邊）→ 台 1 線 → 台 26 線（屏鵝公路）→ ${to}`;
+              driveTip = '經南州／林邊接屏鵝公路，可停品味軒休息站、車城農會或楓港海景休息';
+              driveCost = '油資與通行費約 NT$ 250 - 500';
+            } else {
+              const westRanks = { '基隆': 0, '台北': 1, '新北': 1, '桃園': 2, '新竹': 3, '苗栗': 4, '台中': 5, '彰化': 6, '南投': 6, '雲林': 7, '嘉義': 8, '台南': 9, '高雄': 10, '屏東': 11, '墾丁': 12 };
+              const findRank = (s) => {
+                const k = Object.keys(westRanks).find(c => s.includes(c));
+                return k !== undefined ? westRanks[k] : null;
+              };
+              const rA = findRank(from), rB = findRank(to);
+              if (rA !== null && rB !== null) {
+                const lo = Math.min(rA, rB), hi = Math.max(rA, rB);
+                const serviceAreas = [
+                  { r: 2.3, name: '中壢 / 湖口服務區' },
+                  { r: 3.3, name: '關西 / 寶山服務區' },
+                  { r: 4.8, name: '泰安 / 清水服務區' },
+                  { r: 6.2, name: '南投 / 西湖服務區' },
+                  { r: 7.2, name: '西螺 / 古坑服務區' },
+                  { r: 8.8, name: '新營 / 東山服務區' },
+                  { r: 9.7, name: '仁德 / 關廟服務區' }
+                ];
+                const onRoute = serviceAreas.filter(sa => sa.r > lo && sa.r < hi).map(sa => sa.name);
+                routeDesc = `${from} → 國道 1 號 / 國道 3 號 → ${to}`;
+                driveTip = onRoute.length
+                  ? `國道 1 號 / 3 號，順路可停 ${onRoute.slice(0, 3).join('、')}`
+                  : '國道 1 號 / 3 號或快速道路短程直達，建議出發前確認目的地周邊停車場空位';
+                driveCost = (hi - lo) >= 5 ? '油資與 eTag 通行費約 NT$ 600 - 1,200' : '油資與 eTag 通行費約 NT$ 150 - 450';
+              }
+            }
           }
           return {
             category: '交通',
@@ -3766,7 +3830,7 @@
       const LAND_TIME_OVERRIDES = {
         '台北|花蓮': { drive: 180, train: 130 }, '台北|台東': { drive: 330, train: 240 }, '花蓮|台東': { drive: 170, train: 120 },
         '台北|宜蘭': { drive: 70, train: 75 }, '宜蘭|花蓮': { drive: 130, train: 75 }, '台南|台東': { drive: 200, train: 160 },
-        '高雄|台東': { drive: 170, train: 130 }, '台南|台北': { drive: 240, train: 200 }, '台南|高雄': { drive: 50, train: 35 },
+        '高雄|台東': { drive: 170, train: 130 }, '屏東|台東': { drive: 125, train: 95 }, '墾丁|台東': { drive: 145, train: 0 }, '台南|台北': { drive: 240, train: 200 }, '台南|高雄': { drive: 50, train: 35 },
         '台南|台中': { drive: 120, train: 105 }, '台北|台中': { drive: 140, train: 125 }, '高雄|墾丁': { drive: 110, train: 0 },
         '台南|墾丁': { drive: 150, train: 0 }, '台北|高雄': { drive: 300, train: 240 }
       };
@@ -5105,7 +5169,7 @@
                   </div>
 
                   <div class="space-y-1.5">
-                    ${item.transport ? `<div class="inline-flex items-center gap-1 text-xs font-bold bg-[#96CBE3]/45 border border-[#2D3A4A] rounded-lg px-2 py-0.5">🚆 ${escapeHtml(item.transport)}</div>` : ''}
+                    ${item.transport ? `<div class="inline-flex items-center gap-1 text-xs font-bold bg-[#96CBE3]/45 border border-[#2D3A4A] rounded-lg px-2 py-0.5">${item.transitMode === 'drive' ? '🚗' : '🚆'} ${escapeHtml(item.transport)}</div>` : ''}
                     ${(item.scheduleOptions && item.scheduleOptions.length) ? `
                       <div class="bg-[#96CBE3]/25 border-2 border-[#2D3A4A] rounded-xl p-2.5 space-y-2 text-xs">
                         <div class="font-bold">${step2List.length ? '🕒 ① 選擇第一段出發班次（點選後自動更新下方轉乘時刻與後續行程）：' : '🕒 選擇出發班次（點選後自動順延調整後續行程與路線）：'}</div>
