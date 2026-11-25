@@ -1,4 +1,4 @@
-const CACHE_NAME = 'travel-notebook-ehon-v16';
+const CACHE_NAME = 'travel-notebook-ehon-v17';
 const APP_SHELL = [
   './',
   './index.html',

@@ -352,6 +352,7 @@
             <button type="button" class="preset-prompt ehon-pill shrink-0 px-2.5 py-1 bg-[#FFFDF7] hover:bg-[#96CBE3]" data-prompt="從台南到台北 3天2夜 自由行搭高鐵，龍山寺、大稻埕霞海城隍廟、101、寧夏夜市">🚄 台南→台北</button>
             <button type="button" class="preset-prompt ehon-pill shrink-0 px-2.5 py-1 bg-[#FFFDF7] hover:bg-[#B3D9A6]" data-prompt="從台北到花蓮 3天2夜 自行開車看海、慶修院與東大門夜市美食">🚗 台北→花蓮自駕</button>
             <button type="button" class="preset-prompt ehon-pill shrink-0 px-2.5 py-1 bg-[#FFFDF7] hover:bg-[#F7D47A]" data-prompt="台中 2天1夜 大甲鎮瀾宮、宮原眼科、審計新村與逢甲夜市美食">🧋 台中廟宇美食</button>
+            <button type="button" class="preset-prompt ehon-pill shrink-0 px-2.5 py-1 bg-[#FFFDF7] hover:bg-[#96CBE3]" data-prompt="台灣環島 7天6夜">🔄 台灣環島</button>
             <button type="button" class="preset-prompt ehon-pill shrink-0 px-2.5 py-1 bg-[#FFFDF7] hover:bg-[#B3D9A6]" data-prompt="北海道 5天4夜 札幌時計台、小樽運河海鮮、湯咖哩">❄️ 北海道</button>
             <button type="button" class="preset-prompt ehon-pill shrink-0 px-2.5 py-1 bg-[#FFFDF7] hover:bg-[#F0A195]" data-prompt="大阪 5天4夜 親子美食購物，環球影城、黑門市場、道頓堀">🏯 大阪</button>
           </div>
@@ -429,6 +430,48 @@
         </div>
         <button type="button" id="btnShowIntlFields" class="text-xs font-bold underline text-muted hover:text-ink">要出國？顯示機場設定</button>
         <input id="terminalInfoInput" type="hidden" value="國內陸路免航站" />
+
+        <!-- 台灣環島設定：出發地點 ＋ 途中停留縣市 -->
+        <div id="roundIslandBlock" class="hidden space-y-3 p-3.5 rounded-2xl bg-[#96CBE3]/20 border-2 border-[#2D3A4A]">
+          <div class="flex flex-wrap items-center justify-between gap-2">
+            <div class="text-xs font-bold">🔄 台灣環島規劃設定（請填寫出發地點與途中停留縣市）</div>
+            <div class="flex items-center gap-1.5 text-[11px]">
+              <button type="button" id="btnRoundPresetCCW" class="ehon-pill px-2 py-0.5 bg-[#FFFDF7] hover:bg-[#F7D47A] font-bold">逆時針參考</button>
+              <button type="button" id="btnRoundPresetCW" class="ehon-pill px-2 py-0.5 bg-[#FFFDF7] hover:bg-[#F7D47A] font-bold">順時針參考</button>
+              <button type="button" id="btnRoundStopsReset" class="ehon-pill px-2 py-0.5 bg-[#FFFDF7] hover:bg-[#F0A195]/40 font-bold">重選停留縣市</button>
+            </div>
+          </div>
+          <div class="grid grid-cols-1 sm:grid-cols-3 gap-3 text-sm">
+            <div class="min-w-0">
+              <label for="roundIslandOriginSelect" class="block text-xs font-bold mb-1.5">🚩 出發地點 <span class="text-[#B4533F]">（必選）</span></label>
+              <select id="roundIslandOriginSelect" class="ehon-input w-full h-[42px] px-3 py-1.5 text-sm font-bold">
+                <option value="">請選擇出發縣市…</option>
+                <option value="台北">台北</option>
+                <option value="新北">新北</option>
+                <option value="基隆">基隆</option>
+                <option value="桃園">桃園</option>
+                <option value="新竹">新竹</option>
+                <option value="苗栗">苗栗</option>
+                <option value="台中">台中</option>
+                <option value="彰化">彰化</option>
+                <option value="南投">南投</option>
+                <option value="雲林">雲林</option>
+                <option value="嘉義">嘉義</option>
+                <option value="台南">台南</option>
+                <option value="高雄">高雄</option>
+                <option value="屏東">屏東</option>
+                <option value="宜蘭">宜蘭</option>
+                <option value="花蓮">花蓮</option>
+                <option value="台東">台東</option>
+              </select>
+            </div>
+            <div class="sm:col-span-2 min-w-0">
+              <div class="text-xs font-bold mb-1.5">📍 途中要停留的縣市 <span class="text-[#B4533F]">（必選，依點選順序排列）</span></div>
+              <div id="roundIslandStopChips" class="flex flex-wrap gap-1.5"></div>
+            </div>
+          </div>
+          <div id="roundIslandRoutePreview" class="text-xs font-bold bg-[#FFFDF7] border border-[#2D3A4A] rounded-xl px-3 py-2 text-muted">請先選擇出發地點，並點選至少 1 個途中要停留的縣市。</div>
+        </div>
 
         <div id="promptInlineWarn" class="hidden p-3 rounded-2xl bg-[#F0A195]/35 border-2 border-[#2D3A4A] text-xs sm:text-sm font-bold flex items-center justify-between gap-2 flex-wrap" role="alert"></div>
 
@@ -6261,13 +6304,91 @@
         showToast(toastMsg);
       }
 
+      const ROUND_ISLAND_CITIES = ['台北', '新北', '基隆', '桃園', '新竹', '苗栗', '台中', '彰化', '南投', '雲林', '嘉義', '台南', '高雄', '屏東', '墾丁', '宜蘭', '花蓮', '台東'];
+      const ROUND_ISLAND_CCW_RING = ['台北', '台中', '台南', '高雄', '台東', '花蓮', '宜蘭'];
+      let roundIslandStops = [];
+
+      function isRoundIslandPrompt(text) {
+        return /環島|環台|環遊台灣|環遊臺灣|全島/.test(String(text || ''));
+      }
+
+      function extractRoundIslandFromText(rawText) {
+        const norm = String(rawText || '').replace(/臺/g, '台');
+        let origin = '';
+        const originPatterns = [
+          /(?:從|由)\s*([一-龥]{2,3})\s*(?:出發|啟程|開始)/,
+          /出發地點?[為是：:\s]*([一-龥]{2,3})/,
+          /([一-龥]{2,3})\s*出發/
+        ];
+        for (const pat of originPatterns) {
+          const m = norm.match(pat);
+          if (m) {
+            const cand = ROUND_ISLAND_CITIES.find(c => m[1].includes(c));
+            if (cand) { origin = cand; break; }
+          }
+        }
+        const mentions = [];
+        ROUND_ISLAND_CITIES.forEach((c) => {
+          let idx = norm.indexOf(c);
+          while (idx !== -1) {
+            mentions.push({ city: c, idx });
+            idx = norm.indexOf(c, idx + c.length);
+          }
+        });
+        mentions.sort((a, b) => a.idx - b.idx);
+        const ordered = [];
+        mentions.forEach((m) => {
+          if (ordered[ordered.length - 1] !== m.city) ordered.push(m.city);
+        });
+        if (!origin && ordered.length >= 2 && /(→|->|到|往)/.test(norm)) {
+          origin = ordered[0];
+        }
+        const stops = [];
+        ordered.forEach((c) => {
+          if (c !== origin && !stops.includes(c)) stops.push(c);
+        });
+        return { origin, stops };
+      }
+
+      function renderRoundIslandUI() {
+        const chipsEl = document.getElementById('roundIslandStopChips');
+        const previewEl = document.getElementById('roundIslandRoutePreview');
+        const origEl = document.getElementById('roundIslandOriginSelect');
+        if (!chipsEl || !previewEl || !origEl) return;
+        const orig = origEl.value || '';
+        roundIslandStops = roundIslandStops.filter((c, i, arr) => c && c !== orig && arr.indexOf(c) === i);
+
+        chipsEl.innerHTML = ROUND_ISLAND_CITIES.map((city) => {
+          const orderIdx = roundIslandStops.indexOf(city);
+          const isOrigin = city === orig;
+          const isPicked = orderIdx !== -1;
+          return `<button type="button" data-ri-city="${city}" ${isOrigin ? 'disabled' : ''} class="ri-stop-chip ehon-pill px-2.5 py-1 text-xs font-bold transition-colors ${isOrigin ? 'bg-[#E5E7EB] opacity-55 cursor-not-allowed' : isPicked ? 'bg-[#B3D9A6]' : 'bg-[#FFFDF7] hover:bg-[#F7D47A]/60'}">${isPicked ? `<span class="inline-block mr-1 px-1 rounded-full bg-[#2D3A4A] text-[#FFFDF7] text-[10px]">${orderIdx + 1}</span>` : ''}${city}${isOrigin ? ' (起點)' : ''}</button>`;
+        }).join('');
+
+        if (!orig && roundIslandStops.length === 0) {
+          previewEl.className = 'text-xs font-bold bg-[#FFFDF7] border border-[#2D3A4A] rounded-xl px-3 py-2 text-[#B4533F]';
+          previewEl.textContent = '⚠️ 請先選擇「出發地點」，並點選至少 1 個「途中要停留的縣市」。';
+        } else if (!orig) {
+          previewEl.className = 'text-xs font-bold bg-[#FFFDF7] border border-[#2D3A4A] rounded-xl px-3 py-2 text-[#B4533F]';
+          previewEl.textContent = `⚠️ 已選停留縣市（${roundIslandStops.join(' → ')}），請再選擇「出發地點」。`;
+        } else if (roundIslandStops.length === 0) {
+          previewEl.className = 'text-xs font-bold bg-[#FFFDF7] border border-[#2D3A4A] rounded-xl px-3 py-2 text-[#B4533F]';
+          previewEl.textContent = `⚠️ 已設定出發地「${orig}」，請再點選至少 1 個「途中要停留的縣市」。`;
+        } else {
+          previewEl.className = 'text-xs font-bold bg-[#B3D9A6]/35 border border-[#2D3A4A] rounded-xl px-3 py-2 text-[#2D3A4A]';
+          previewEl.textContent = `✅ 環島路線預覽：${[orig, ...roundIslandStops, orig].join(' ➔ ')}（共停靠 ${roundIslandStops.length} 站後返回${orig}）`;
+        }
+      }
+
       function handlePromptGeneration(promptText) {
         const _wEl = document.getElementById('promptInlineWarn');
         if (_wEl) _wEl.classList.add('hidden');
         const text = (promptText || '').trim();
         if (!text) { showToast('請輸入旅遊需求！'); return; }
 
-        const multi = parseMultiLegRoute(text);
+        const normText = text.replace(/臺/g, '台');
+        const isRoundIsland = isRoundIslandPrompt(normText);
+        let multi = parseMultiLegRoute(normText);
         let transportMode = document.getElementById('transportPrefSelect').value;
         if (transportMode === 'auto') {
           if (text.includes('開車') || text.includes('自駕')) transportMode = 'drive';
@@ -6285,8 +6406,71 @@
           if (retDate) document.getElementById('returnDateInput').value = retDate;
         }
 
+        if (isRoundIsland) {
+          const riBlock = document.getElementById('roundIslandBlock');
+          const riOrigEl = document.getElementById('roundIslandOriginSelect');
+          const riChipsEl = document.getElementById('roundIslandStopChips');
+          if (riBlock) riBlock.classList.remove('hidden');
+
+          const parsedRI = extractRoundIslandFromText(normText);
+          let riOrigin = (riOrigEl && riOrigEl.value) || (multi && multi.origin) || parsedRI.origin || '';
+          let riStops = roundIslandStops.length
+            ? roundIslandStops.slice()
+            : ((multi && multi.legs && multi.legs.length) ? multi.legs.map(l => l.city) : parsedRI.stops);
+          riStops = riStops.filter((c, i, arr) => c && c !== riOrigin && arr.indexOf(c) === i);
+
+          if (riOrigEl && riOrigin && riOrigEl.value !== riOrigin) riOrigEl.value = riOrigin;
+          if (riStops.length) roundIslandStops = riStops.slice();
+          renderRoundIslandUI();
+
+          if (!riOrigin || riStops.length === 0) {
+            const pBody = document.getElementById('promptSection');
+            if (pBody && pBody.classList.contains('hidden')) pBody.classList.remove('hidden');
+            const missingRi = [];
+            if (!riOrigin) missingRi.push('出發地點');
+            if (riStops.length === 0) missingRi.push('途中要停留的縣市');
+            if (!riOrigin && riOrigEl) {
+              riOrigEl.classList.add('ring-2', 'ring-[#F0A195]');
+              setTimeout(() => riOrigEl.classList.remove('ring-2', 'ring-[#F0A195]'), 3500);
+            }
+            if (riStops.length === 0 && riChipsEl) {
+              riChipsEl.classList.add('ring-2', 'ring-[#F0A195]', 'rounded-xl', 'p-1');
+              setTimeout(() => riChipsEl.classList.remove('ring-2', 'ring-[#F0A195]', 'rounded-xl', 'p-1'), 3500);
+            }
+            const firstFocusId = !riOrigin ? 'roundIslandOriginSelect' : 'roundIslandBlock';
+            if (_wEl) {
+              _wEl.innerHTML = `<span>⚠️ 規劃環島行程請先提供：<strong>${missingRi.join('、')}</strong></span><button type="button" class="btn-focus-missing ehon-pill px-2.5 py-1 bg-[#F7D47A] text-xs font-bold shrink-0" data-focus-id="${firstFocusId}">👇 前往設定</button>`;
+              _wEl.classList.remove('hidden');
+            }
+            showToast(`🔄 環島行程請先設定【${missingRi.join('、')}】！`);
+            const focusTarget = document.getElementById(firstFocusId);
+            if (focusTarget) setTimeout(() => { focusTarget.scrollIntoView({ behavior: 'smooth', block: 'center' }); if (focusTarget.focus) setTimeout(() => focusTarget.focus(), 220); }, 150);
+            return;
+          }
+
+          const pmDays = normText.match(/(\d+)\s*天/);
+          let riDays = pmDays ? Math.max(2, Math.min(21, parseInt(pmDays[1], 10))) : 0;
+          if (!riDays && depDate && retDate) {
+            const diff = Math.round((new Date(retDate + 'T00:00:00') - new Date(depDate + 'T00:00:00')) / 86400000) + 1;
+            if (!isNaN(diff) && diff >= 2 && diff <= 21) riDays = diff;
+          }
+          if (!riDays) riDays = Math.max(riStops.length + 1, Math.min(10, riStops.length + 2));
+          riDays = Math.max(riStops.length, Math.min(21, riDays));
+
+          const base = Math.floor(riDays / riStops.length);
+          const rem = riDays % riStops.length;
+          multi = {
+            origin: riOrigin,
+            legs: riStops.map((city, idx) => ({
+              city,
+              days: Math.max(1, base + (idx >= riStops.length - rem ? 1 : 0)),
+              returnHome: idx === riStops.length - 1 ? riOrigin : ''
+            }))
+          };
+        }
+
         const knownIntlKeys = ['大阪', '關西', '東京', '北海道', '札幌', '京都', '沖繩', '首爾', '曼谷', '清邁', '越南', '胡志明', '河內', '新加坡', '香港', '澳門', '上海', '北京', '歐洲', '美國', '日本', '韓國', '泰國'];
-        const hasIntlHint = knownIntlKeys.some(k => text.includes(k)) || (!multi && !TAIWAN_CITIES.some(c => text.includes(c)));
+        const hasIntlHint = !isRoundIsland && (knownIntlKeys.some(k => text.includes(k)) || (!multi && !TAIWAN_CITIES.some(c => normText.includes(c))));
         if (hasIntlHint) {
           const missing = [];
           if (!depDate) missing.push('出發日期');
@@ -7324,10 +7508,74 @@
         });
 
         document.getElementById('btnClearAi').addEventListener('click', () => {
-          document.getElementById('chatPromptInput').value = '';
-          document.getElementById('promptCharCount').textContent = '0';
+          const pInput = document.getElementById('chatPromptInput');
+          if (pInput) pInput.value = '';
+          const charEl = document.getElementById('promptCharCount');
+          if (charEl) charEl.textContent = '0';
+          const ddEl = document.getElementById('departDateInput');
+          if (ddEl) ddEl.value = '';
+          const rdEl = document.getElementById('returnDateInput');
+          if (rdEl) rdEl.value = '';
+          const trEl = document.getElementById('transportPrefSelect');
+          if (trEl) trEl.value = 'auto';
+          const hsrEl = document.getElementById('hsrOriginSelect');
+          if (hsrEl) hsrEl.value = '台南';
+          const daEl = document.getElementById('departAirportSelect');
+          if (daEl) daEl.value = 'NONE';
+          const raEl = document.getElementById('returnAirportSelect');
+          if (raEl) raEl.value = 'AUTO';
+          const dsEl = document.getElementById('departSlotSelect');
+          if (dsEl) dsEl.value = 'morning';
+          const saveNewEl = document.getElementById('saveAsNewTripCheckbox');
+          if (saveNewEl) saveNewEl.checked = true;
+          const riOrigEl = document.getElementById('roundIslandOriginSelect');
+          if (riOrigEl) riOrigEl.value = '';
+          roundIslandStops = [];
+          renderRoundIslandUI();
+          const warnEl = document.getElementById('promptInlineWarn');
+          if (warnEl) { warnEl.classList.add('hidden'); warnEl.innerHTML = ''; }
+          intlFieldsForced = false;
+          datesTouchedSinceGen = false;
           updateIntlFields();
+          if (pInput) pInput.focus();
+          showToast('已清空所有已填欄位內容');
         });
+        document.getElementById('roundIslandOriginSelect').addEventListener('change', () => {
+          renderRoundIslandUI();
+        });
+        document.getElementById('roundIslandStopChips').addEventListener('click', (e) => {
+          const btn = e.target.closest('.ri-stop-chip');
+          if (!btn || btn.disabled) return;
+          const city = btn.getAttribute('data-ri-city');
+          if (!city) return;
+          const idx = roundIslandStops.indexOf(city);
+          if (idx === -1) roundIslandStops.push(city);
+          else roundIslandStops.splice(idx, 1);
+          renderRoundIslandUI();
+        });
+        const applyRoundIslandPreset = (clockwise) => {
+          const origEl = document.getElementById('roundIslandOriginSelect');
+          const orig = (origEl && origEl.value) || '';
+          if (!orig) {
+            showToast('請先選擇「出發地點」，再套用環島方向順序');
+            if (origEl) origEl.focus();
+            return;
+          }
+          const baseRing = clockwise ? ROUND_ISLAND_CCW_RING.slice().reverse() : ROUND_ISLAND_CCW_RING.slice();
+          const idx = baseRing.indexOf(orig);
+          const ordered = idx !== -1
+            ? baseRing.slice(idx + 1).concat(baseRing.slice(0, idx))
+            : baseRing.filter(c => c !== orig);
+          roundIslandStops = ordered.slice(0, 4);
+          renderRoundIslandUI();
+        };
+        document.getElementById('btnRoundPresetCCW').addEventListener('click', () => applyRoundIslandPreset(false));
+        document.getElementById('btnRoundPresetCW').addEventListener('click', () => applyRoundIslandPreset(true));
+        document.getElementById('btnRoundStopsReset').addEventListener('click', () => {
+          roundIslandStops = [];
+          renderRoundIslandUI();
+        });
+        renderRoundIslandUI();
         document.getElementById('hsrOriginSelect').addEventListener('change', (e) => {
           activeHsrOrigin = e.target.value;
           renderFlights();
@@ -7643,14 +7891,20 @@
       function updateIntlFields() {
         const text = (document.getElementById('chatPromptInput').value || '').trim();
         const depAir = document.getElementById('departAirportSelect').value;
+        const isRound = isRoundIslandPrompt(text);
         let isIntl;
-        if (text) isIntl = INTL_HINTS.some(k => text.includes(k));
+        if (isRound) isIntl = false;
+        else if (text) isIntl = INTL_HINTS.some(k => text.includes(k));
         else isIntl = !TAIWAN_CITIES.some(c => (state.cityKey || '').includes(c));
-        const show = isIntl || intlFieldsForced || depAir !== 'NONE';
-        document.getElementById('intlFieldsBlock').classList.toggle('hidden', !show);
-        document.getElementById('btnShowIntlFields').classList.toggle('hidden', show);
+        const showIntl = isIntl || intlFieldsForced || depAir !== 'NONE';
+        document.getElementById('intlFieldsBlock').classList.toggle('hidden', !showIntl);
+        document.getElementById('btnShowIntlFields').classList.toggle('hidden', showIntl);
         document.getElementById('departDateReq').classList.toggle('hidden', !isIntl);
-        document.getElementById('tripKindHint').textContent = isIntl ? '✈️ 出國行程：請填出發日期並選出發機場' : (text ? '🇹🇼 國內行程：日期可不填' : '輸入後會自動判斷國內或出國');
+        const riBlock = document.getElementById('roundIslandBlock');
+        if (riBlock) riBlock.classList.toggle('hidden', !isRound);
+        document.getElementById('tripKindHint').textContent = isRound
+          ? '🔄 台灣環島：請設定出發地點與途中停留縣市'
+          : (isIntl ? '✈️ 出國行程：請填出發日期並選出發機場' : (text ? '🇹🇼 國內行程：日期可不填' : '輸入後會自動判斷國內或出國'));
       }
 
       // 初始化啟動
