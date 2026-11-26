@@ -1089,6 +1089,36 @@
       let fxIsLive = false;
 
       const TAIWAN_CITIES = ['台北', '新北', '基隆', '桃園', '新竹', '苗栗', '台中', '彰化', '南投', '雲林', '嘉義', '台南', '高雄', '屏東', '墾丁', '宜蘭', '花蓮', '台東', '澎湖', '金門', '馬祖', '蘭嶼', '綠島', '小琉球'];
+      const TAIWAN_SCENIC_TO_CITY = {
+        '日月潭': '南投', '清境': '南投', '溪頭': '南投', '杉林溪': '南投', '埔里': '南投', '集集': '南投', '車埕': '南投', '合歡山': '南投', '九族': '南投', '奧萬大': '南投', '魚池': '南投', '鹿谷': '南投', '竹山': '南投',
+        '阿里山': '嘉義', '奮起湖': '嘉義', '故宮南院': '嘉義', '太平雲梯': '嘉義', '布袋': '嘉義', '東石': '嘉義',
+        '高美濕地': '台中', '武陵農場': '台中', '福壽山': '台中', '梨山': '台中', '谷關': '台中', '大甲': '台中', '新社': '台中',
+        '九份': '新北', '十分': '新北', '平溪': '新北', '淡水': '新北', '烏來': '新北', '野柳': '新北', '福隆': '新北', '金山': '新北', '瑞芳': '新北', '三峽': '新北', '鶯歌': '新北', '貢寮': '新北', '八里': '新北', '金瓜石': '新北',
+        '陽明山': '台北', '北投': '台北', '貓空': '台北', '西門町': '台北', '大稻埕': '台北',
+        '大溪': '桃園', '拉拉山': '桃園', '石門水庫': '桃園', '青埔': '桃園',
+        '內灣': '新竹', '司馬庫斯': '新竹', '北埔': '新竹', '六福村': '新竹', '關西': '新竹',
+        '南庄': '苗栗', '三義': '苗栗', '泰安': '苗栗', '勝興車站': '苗栗',
+        '鹿港': '彰化', '田尾': '彰化', '王功': '彰化', '八卦山': '彰化',
+        '北港': '雲林', '古坑': '雲林', '劍湖山': '雲林', '虎尾': '雲林',
+        '關子嶺': '台南', '安平': '台南', '七股': '台南', '井仔腳': '台南', '玉井': '台南',
+        '美濃': '高雄', '旗山': '高雄', '旗津': '高雄', '佛光山': '高雄', '義大': '高雄', '澄清湖': '高雄',
+        '東港': '屏東', '霧台': '屏東', '潮州': '屏東', '枋寮': '屏東',
+        '恆春': '墾丁', '四重溪': '墾丁', '鵝鑾鼻': '墾丁', '海生館': '墾丁', '滿州': '墾丁',
+        '礁溪': '宜蘭', '羅東': '宜蘭', '太平山': '宜蘭', '清水地熱': '宜蘭', '蘇澳': '宜蘭', '冬山': '宜蘭', '頭城': '宜蘭', '烏石港': '宜蘭', '龜山島': '宜蘭',
+        '太魯閣': '花蓮', '七星潭': '花蓮', '瑞穗': '花蓮', '玉里': '花蓮', '新城': '花蓮', '秀林': '花蓮', '壽豐': '花蓮', '光復': '花蓮',
+        '池上': '台東', '伯朗大道': '台東', '知本': '台東', '初鹿': '台東', '三仙台': '台東', '鹿野': '台東', '太麻里': '台東', '多良': '台東', '關山': '台東', '成功': '台東'
+      };
+      function normalizeTaiwanCounty(name) {
+        const s = String(name || '').replace(/臺/g, '台').trim();
+        if (!s) return '';
+        const direct = TAIWAN_CITIES.find(c => s.includes(c));
+        if (direct) return direct;
+        const scenicKey = Object.keys(TAIWAN_SCENIC_TO_CITY).find(k => s.includes(k));
+        return scenicKey ? TAIWAN_SCENIC_TO_CITY[scenicKey] : '';
+      }
+      function isTaiwanPlace(name) {
+        return Boolean(normalizeTaiwanCounty(name));
+      }
 
       const CITY_COORDS = {
         '台南': { name: '台南 Tainan', lat: 22.9999, lon: 120.2269, fallbackHigh: 27, fallbackLow: 20, fallbackDesc: '溫暖晴朗', advice: '白天溫暖舒適，早晚加薄外套即可', isTaiwan: true },
@@ -1893,6 +1923,24 @@
 
       function getDomesticTransferInfo(dest) {
         const d = dest || '';
+        if (d.includes('日月潭')) {
+          return '🚌 轉運接駁：高鐵台中站 5 號出口轉乘「台灣好行 6670 日月潭線」直達水社／向山（約 80 分鐘，班距約 30~40 分鐘），當地可搭環湖公車或遊艇串聯伊達邵、玄光寺。';
+        }
+        if (d.includes('清境') || d.includes('合歡山')) {
+          return '🚌 轉運接駁：高鐵台中站搭南投客運往埔里，再轉乘 6658/6659 往清境農場（共約 2 小時）；建議提前查詢班次。';
+        }
+        if (d.includes('溪頭') || d.includes('杉林溪')) {
+          return '🚌 轉運接駁：高鐵台中站 5 號出口轉乘「台灣好行 6883 溪頭線」直達溪頭（約 80 分鐘）。';
+        }
+        if (d.includes('阿里山') || d.includes('奮起湖')) {
+          return '🚌 轉運接駁：高鐵嘉義站或台鐵嘉義站轉乘「台灣好行 7329 / 7322 阿里山線」上山（約 2.5 小時）。';
+        }
+        if (d.includes('九份') || d.includes('十分') || d.includes('平溪')) {
+          return '🚆 轉運接駁：高鐵／台鐵台北站轉台鐵至瑞芳站，再轉乘基隆客運 788 / 965 上九份老街，或轉平溪線往十分瀑布。';
+        }
+        if (d.includes('墾丁') || d.includes('恆春')) {
+          return '🚌 轉運接駁：高鐵左營站 2 號出口轉乘「台灣好行 9189 墾丁快線」直達恆春與墾丁大街（約 2 小時）。';
+        }
         if (d.includes('高雄')) {
           return '🚇 轉運接駁：高鐵左營站／台鐵高雄站可轉乘「高雄捷運紅線」往市區・三多商圈，或轉乘「高雄輕軌」直達駁二、大港橋、高雄流行音樂中心與美術館。';
         }
@@ -2098,17 +2146,17 @@
       function toHsrStationName(city) {
         const c = String(city || '').trim();
         if (!c || c === '出發地') return '台南';
-        if (c.includes('高雄') || c.includes('左營') || c.includes('屏東') || c.includes('墾丁')) return '左營';
-        if (c.includes('台南') || c.includes('臺南')) return '台南';
-        if (c.includes('嘉義')) return '嘉義';
+        if (c.includes('高雄') || c.includes('左營') || c.includes('屏東') || c.includes('墾丁') || c.includes('恆春') || c.includes('東港') || c.includes('小琉球')) return '左營';
+        if (c.includes('台南') || c.includes('臺南') || c.includes('關子嶺')) return '台南';
+        if (c.includes('嘉義') || c.includes('阿里山') || c.includes('奮起湖')) return '嘉義';
         if (c.includes('雲林')) return '雲林';
-        if (c.includes('彰化')) return '彰化';
-        if (c.includes('台中') || c.includes('臺中')) return '台中';
-        if (c.includes('苗栗')) return '苗栗';
-        if (c.includes('新竹')) return '新竹';
-        if (c.includes('桃園')) return '桃園';
+        if (c.includes('彰化') || c.includes('鹿港')) return '彰化';
+        if (c.includes('台中') || c.includes('臺中') || c.includes('南投') || c.includes('日月潭') || c.includes('清境') || c.includes('溪頭') || c.includes('杉林溪') || c.includes('埔里') || c.includes('集集') || c.includes('九族')) return '台中';
+        if (c.includes('苗栗') || c.includes('南庄') || c.includes('三義')) return '苗栗';
+        if (c.includes('新竹') || c.includes('內灣') || c.includes('關西')) return '新竹';
+        if (c.includes('桃園') || c.includes('大溪')) return '桃園';
         if (c.includes('板橋')) return '板橋';
-        if (c.includes('台北') || c.includes('臺北')) return '台北';
+        if (c.includes('台北') || c.includes('臺北') || c.includes('新北') || c.includes('九份') || c.includes('十分') || c.includes('淡水') || c.includes('烏來') || c.includes('陽明山') || c.includes('北投')) return '台北';
         if (c.includes('南港')) return '南港';
         return c;
       }
@@ -2612,7 +2660,7 @@
       function buildTransitItem(origin, dest, mode, isReturn) {
         const from = isReturn ? dest : (origin || '台南');
         const to = isReturn ? (origin || '台南') : dest;
-        const isDomesticTW = TAIWAN_CITIES.some(c => from.includes(c)) && TAIWAN_CITIES.some(c => to.includes(c));
+        const isDomesticTW = isTaiwanPlace(from) && isTaiwanPlace(to);
         const isTainanTaipei = (from.includes('台南') && to.includes('台北')) || (from.includes('台北') && to.includes('台南'));
 
         if (isDomesticTW && (TW_ISLANDS.some(k => from.includes(k) || to.includes(k)) || mode === 'flight')) {
@@ -3836,7 +3884,10 @@
       };
       function findGeoKey(name) {
         const c = String(name || '');
-        return Object.keys(TW_CITY_GEO).find(k => c.includes(k)) || '';
+        const direct = Object.keys(TW_CITY_GEO).find(k => c.includes(k));
+        if (direct) return direct;
+        const mapped = normalizeTaiwanCounty(c);
+        return (mapped && TW_CITY_GEO[mapped]) ? mapped : '';
       }
       function estimateLandMinutes(from, to, mode) {
         const a = findGeoKey(from), b = findGeoKey(to);
@@ -4033,11 +4084,11 @@
         const pool = DESTINATION_POOLS[cleanDest] || createUniversalPool(cleanDest);
         const cityMeta = CITY_COORDS[cleanDest] || {
           name: cleanDest, fallbackHigh: 24, fallbackLow: 18, fallbackDesc: '晴時多雲',
-          advice: '建議依即時預報穿搭', isTaiwan: TAIWAN_CITIES.some(c => cleanDest.includes(c))
+          advice: '建議依即時預報穿搭', isTaiwan: isTaiwanPlace(cleanDest)
         };
         const totalDays = Math.max(1, Math.min(14, requestedDays || pool.days.length));
         const mode = transportMode || 'auto';
-        const isTW = cityMeta.isTaiwan || TAIWAN_CITIES.some(c => cleanDest.includes(c));
+        const isTW = cityMeta.isTaiwan || isTaiwanPlace(cleanDest);
 
         const days = [];
         const usedTitles = new Set();
@@ -5430,7 +5481,7 @@
         const sumOut = document.getElementById('summaryOutbound');
         const sumIn = document.getElementById('summaryInbound');
         const termInp = document.getElementById('terminalInfoInput');
-        const isTWState = TAIWAN_CITIES.some(c => (state.cityKey || '').includes(c));
+        const isTWState = isTaiwanPlace(state.cityKey || '');
         if (sumOut) sumOut.textContent = isNoFlight ? (isTWState ? '國內陸路交通' : '請於下方選「出發機場」帶出航班') : `${f.outboundNo || '-'} (${f.outboundTime || '-'})`;
         if (sumIn) sumIn.textContent = isNoFlight ? '國內陸路交通' : `${f.returnNo || '-'} (${f.returnTime || '-'})`;
         if (termInp) termInp.value = isNoFlight ? '國內高鐵/台鐵/自駕' : `${depAir} ↔ ${retAir}`;
@@ -5731,7 +5782,7 @@
 
       function renderEssentials() {
         const c = state.cityKey || '';
-        const isTW = TAIWAN_CITIES.some(t => c.includes(t));
+        const isTW = isTaiwanPlace(c);
         let plug = '雙扁腳 100V-110V'; let emergency = '報警 110 / 救護車 119'; let tip = '離線地圖與行動電源隨身攜帶';
         if (isTW) { plug = '台灣 110V 雙扁腳'; emergency = '報警 110 / 救護 119 / 反詐騙 165'; tip = '廟宇參拜保持輕聲，夜市小吃建議自備環保餐具與衛生紙'; }
         else if (c.includes('泰')) { plug = '220V 雙扁/圓腳'; emergency = '觀光警察 1155 / 救護 1669'; tip = '寺廟參觀著過膝褲裙'; }
@@ -6278,7 +6329,7 @@
 
       function parseMultiLegRoute(text) {
         const allCities = Array.from(new Set(
-          Object.keys(CITY_COORDS).concat(['宜蘭', '墾丁', '南投', '嘉義', '屏東', '苗栗', '新竹', '彰化', '桃園', '京都', '東京', '大阪', '北海道', '首爾', '曼谷'])
+          Object.keys(CITY_COORDS).concat(Object.keys(TAIWAN_SCENIC_TO_CITY), ['宜蘭', '墾丁', '南投', '嘉義', '屏東', '苗栗', '新竹', '彰化', '桃園', '京都', '東京', '大阪', '北海道', '首爾', '曼谷'])
         ));
         const safeText = String(text || '').replace(/(?:\d{4}[\/\-年])?\d{1,2}[\/\-月]\d{1,2}[日號]?/g, ' ');
         const totalDaysM = safeText.match(/(?:共|總共|為期|全程)\s*(\d+)\s*[天日](?:\s*\d+\s*夜)?/) || safeText.match(/(\d+)\s*[天日]\s*\d+\s*夜/);
@@ -6594,7 +6645,7 @@
         }
 
         const knownIntlKeys = ['大阪', '關西', '東京', '北海道', '札幌', '京都', '沖繩', '首爾', '曼谷', '清邁', '越南', '胡志明', '河內', '新加坡', '香港', '澳門', '上海', '北京', '歐洲', '美國', '日本', '韓國', '泰國'];
-        const hasIntlHint = !isRoundIsland && (knownIntlKeys.some(k => text.includes(k)) || (!multi && !TAIWAN_CITIES.some(c => normText.includes(c))));
+        const hasIntlHint = !isRoundIsland && (knownIntlKeys.some(k => text.includes(k)) || (!multi && !isTaiwanPlace(normText)));
         if (hasIntlHint) {
           const missing = [];
           if (!depDate) missing.push('出發日期');
@@ -6689,12 +6740,12 @@
           detectedCity = routeMatch[2].replace(/(自由行|旅遊|之旅|行程|玩|看|逛|[一二兩三四五六七八九十\d]+\s*[天日]遊?).*$/, '').trim();
         }
         if (!detectedCity) {
-          const allKnown = Object.keys(CITY_COORDS).concat(['京都', '首爾', '宜蘭', '台東', '墾丁', '蘭嶼', '綠島', '小琉球', '清邁', '新加坡', '香港', '巴黎']);
+          const allKnown = Object.keys(CITY_COORDS).concat(Object.keys(TAIWAN_SCENIC_TO_CITY), ['京都', '首爾', '宜蘭', '台東', '墾丁', '蘭嶼', '綠島', '小琉球', '清邁', '新加坡', '香港', '巴黎']);
           for (const c of allKnown) { if (text.includes(c)) { detectedCity = c; break; } }
         }
         if (!detectedCity) { const lead = text.split(/[\d\s，,。]/)[0].trim(); detectedCity = lead.length >= 2 && lead.length <= 10 ? lead : '台南'; }
 
-        const isTWDest = TAIWAN_CITIES.some(c => detectedCity.includes(c));
+        const isTWDest = isTaiwanPlace(detectedCity);
         if (isTWDest && !detectedOrigin) {
           const selOrig = (document.getElementById('hsrOriginSelect') && document.getElementById('hsrOriginSelect').value) || '台南';
           if (selOrig && !detectedCity.includes(selOrig)) detectedOrigin = selOrig;
@@ -6708,7 +6759,7 @@
           depAir = 'NONE'; retAir = 'NONE';
           document.getElementById('departAirportSelect').value = 'NONE';
           document.getElementById('returnAirportSelect').value = 'NONE';
-          const prevWasIntl = state && !TAIWAN_CITIES.some(c => (state.cityKey || '').includes(c));
+          const prevWasIntl = state && !isTaiwanPlace(state.cityKey || '');
           if (!datesTouchedSinceGen && depDate && (prevWasIntl || (state && state.cityKey !== detectedCity))) {
             finalPromptDepDate = ''; finalPromptRetDate = '';
             document.getElementById('departDateInput').value = '';
@@ -7818,7 +7869,7 @@
         const syncAirportsFromInputs = () => {
           const da = document.getElementById('departAirportSelect').value;
           let ra = document.getElementById('returnAirportSelect').value;
-          const isTW = TAIWAN_CITIES.some(c => (state.cityKey || '').includes(c));
+          const isTW = isTaiwanPlace(state.cityKey || '');
           if (!isTW && da !== 'NONE' && (ra === 'AUTO' || ra === 'NONE' || !ra)) ra = CITY_TO_AIRPORT[state.cityKey] || 'KIX';
           state.departAirport = da; state.returnAirport = ra;
           if (da !== 'NONE' && ra !== 'NONE') {
@@ -8008,7 +8059,7 @@
         let isIntl;
         if (isRound) isIntl = false;
         else if (text) isIntl = INTL_HINTS.some(k => text.includes(k));
-        else isIntl = !TAIWAN_CITIES.some(c => (state.cityKey || '').includes(c));
+        else isIntl = !isTaiwanPlace(state.cityKey || '');
         const showIntl = isIntl || intlFieldsForced || depAir !== 'NONE';
         document.getElementById('intlFieldsBlock').classList.toggle('hidden', !showIntl);
         document.getElementById('btnShowIntlFields').classList.toggle('hidden', showIntl);
