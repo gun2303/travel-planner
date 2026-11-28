@@ -33,7 +33,7 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Huninn&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Huninn&family=Noto+Sans+TC:wght@400;500;700;800&family=Noto+Serif+TC:wght@700;900&display=swap" rel="stylesheet" />
   <style>
     :root {
       --washi: #FFFDF7;
@@ -47,30 +47,42 @@
       --skylantern: #F7D47A;
       --ocean: #96CBE3;
       --tea: #B3D9A6;
+      --emerald-cta: #38A883;
+      --coral-cta: #E87D52;
+      --amber-box: rgba(247, 212, 122, 0.28);
     }
 
     body.theme-dark {
-      --washi: #1B222C;
-      --washi-elevated: #232C39;
-      --washi-soft: #2A3444;
-      --ink: #F2EDE2;
-      --ink-muted: #B6C2D1;
-      --border-ink: #94A3B8;
-      --shadow-ink: #0D1117;
-      --lantern: #D98478;
-      --skylantern: #D8B45B;
-      --ocean: #6CA5C0;
-      --tea: #84B277;
+      --washi: #0E1512;
+      --washi-elevated: #17201C;
+      --washi-soft: #1E2924;
+      --ink: #F2F5F3;
+      --ink-muted: #9CB0A6;
+      --border-ink: rgba(255, 255, 255, 0.14);
+      --shadow-ink: rgba(0, 0, 0, 0.42);
+      --lantern: #E88B68;
+      --skylantern: #E5B869;
+      --ocean: #52C7A2;
+      --tea: #52C7A2;
+      --emerald-cta: #52C7A2;
+      --coral-cta: #F28C5E;
+      --amber-box: #2A1E12;
       color-scheme: dark;
+      background-image: radial-gradient(circle at 50% 0%, rgba(82, 199, 162, 0.08), transparent 55%);
     }
 
     body {
-      font-family: 'Huninn', -apple-system, BlinkMacSystemFont, 'Noto Sans TC', sans-serif;
+      font-family: 'Noto Sans TC', 'Huninn', -apple-system, BlinkMacSystemFont, sans-serif;
       background-color: var(--washi);
       color: var(--ink);
-      font-size: 15px;
-      line-height: 1.6;
+      font-size: 16px;
+      line-height: 1.65;
       transition: background-color 0.2s ease, color 0.2s ease;
+    }
+
+    .font-editorial {
+      font-family: 'Noto Serif TC', 'Noto Sans TC', serif;
+      letter-spacing: 0.015em;
     }
 
     body.modal-open {
@@ -96,10 +108,20 @@
       border: 2.5px solid var(--border-ink);
       border-radius: 18px;
     }
+    body.theme-dark .ehon-card {
+      border: 1.5px solid rgba(255, 255, 255, 0.14);
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.36);
+    }
+    body.theme-dark .ehon-card-soft {
+      border: 1px solid rgba(255, 255, 255, 0.12);
+    }
     .ehon-pill {
       border: 2px solid var(--border-ink);
       border-radius: 9999px;
       transition: transform 0.14s ease, box-shadow 0.14s ease, background-color 0.14s ease;
+    }
+    body.theme-dark .ehon-pill {
+      border: 1px solid rgba(255, 255, 255, 0.18);
     }
     .ehon-pill:hover:not(:disabled) {
       transform: translateY(-1px);
@@ -111,11 +133,18 @@
     .ehon-btn-raised {
       box-shadow: 2px 2px 0px var(--shadow-ink);
     }
+    body.theme-dark .ehon-btn-raised {
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+    }
     .ehon-input {
       background-color: var(--washi);
       border: 2px solid var(--border-ink);
       border-radius: 14px;
       color: var(--ink);
+    }
+    body.theme-dark .ehon-input {
+      background-color: #101814;
+      border: 1.5px solid rgba(255, 255, 255, 0.18);
     }
     .ehon-input:focus {
       outline: none;
@@ -144,7 +173,10 @@
       border-top: 2px solid var(--border-ink);
     }
     body.theme-dark .tw-tile-strip {
-      opacity: 0.72;
+      height: 2px;
+      background-image: none;
+      background-color: rgba(82, 199, 162, 0.25);
+      border-top: 0;
     }
     .tw-gazhi-bar {
       height: 5px;
@@ -152,15 +184,100 @@
       border-bottom: 2px solid var(--border-ink);
       overflow: hidden;
     }
+    body.theme-dark .tw-gazhi-bar {
+      height: 3px;
+      border-bottom-color: rgba(255, 255, 255, 0.12);
+      opacity: 0.75;
+    }
 
-    /* Dark mode surface & contrast overrides for Tailwind arbitrary utilities */
+    /* Editorial action & card utility classes */
+    .btn-gmap-nav {
+      background-color: var(--emerald-cta);
+      color: #091B14;
+      border: 1.5px solid rgba(0, 0, 0, 0.18);
+      border-radius: 12px;
+      font-weight: 800;
+      transition: transform 0.14s ease, filter 0.14s ease;
+    }
+    .btn-gmap-nav:hover { filter: brightness(1.06); transform: translateY(-1px); }
+    .btn-checkin-coral {
+      background-color: var(--coral-cta);
+      color: #1F0F08;
+      border: 1.5px solid rgba(0, 0, 0, 0.18);
+      border-radius: 12px;
+      font-weight: 800;
+      transition: transform 0.14s ease, filter 0.14s ease;
+    }
+    .btn-checkin-coral:hover { filter: brightness(1.06); transform: translateY(-1px); }
+    .btn-checkin-done {
+      background-color: #1E332B;
+      color: #7BE0BA;
+      border: 1.5px solid rgba(82, 199, 162, 0.45);
+      border-radius: 12px;
+      font-weight: 800;
+    }
+    body:not(.theme-dark) .btn-checkin-done {
+      background-color: #DDF3DF;
+      color: #1B4D36;
+      border-color: #2D3A4A;
+    }
+    .muse-warn-box {
+      background-color: var(--amber-box);
+      border: 1.5px solid rgba(229, 169, 109, 0.45);
+      color: #F4C08A;
+      border-radius: 14px;
+    }
+    body:not(.theme-dark) .muse-warn-box {
+      border: 2px solid #2D3A4A;
+      color: #5C3415;
+    }
+    .muse-connector {
+      background-color: rgba(255, 255, 255, 0.035);
+      border: 1px dashed rgba(255, 255, 255, 0.16);
+      border-radius: 16px;
+    }
+    body:not(.theme-dark) .muse-connector {
+      background-color: #F8F3E8;
+      border: 1.5px dashed rgba(45, 58, 74, 0.35);
+    }
+    .muse-num-input {
+      width: 58px;
+      text-align: center;
+      font-variant-numeric: tabular-nums;
+      font-weight: 800;
+      border-radius: 10px;
+      padding: 3px 6px;
+      background-color: #101814;
+      color: #F2F5F3;
+      border: 1px solid rgba(255, 255, 255, 0.22);
+    }
+    body:not(.theme-dark) .muse-num-input {
+      background-color: #FFFDF7;
+      color: #2D3A4A;
+      border: 1.5px solid #2D3A4A;
+    }
+    .muse-sticky-days {
+      background-color: rgba(14, 21, 18, 0.92);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+    body:not(.theme-dark) .muse-sticky-days {
+      background-color: rgba(255, 253, 247, 0.93);
+      backdrop-filter: blur(8px);
+      -webkit-backdrop-filter: blur(8px);
+    }
+
+    /* Dark forest mode surface & contrast overrides for Tailwind arbitrary utilities */
     body.theme-dark header,
     body.theme-dark nav,
     body.theme-dark .bg-\[\#FFFDF7\] {
       background-color: var(--washi-elevated) !important;
+      color: var(--ink) !important;
     }
-    body.theme-dark .bg-\[\#FFFDF7\]\/95 {
-      background-color: rgba(35, 44, 57, 0.94) !important;
+    body.theme-dark .bg-\[\#FFFDF7\]\/95,
+    body.theme-dark .bg-\[\#FFFDF7\]\/85 {
+      background-color: rgba(23, 32, 28, 0.94) !important;
+      color: var(--ink) !important;
     }
     body.theme-dark .text-\[\#2D3A4A\] {
       color: var(--ink) !important;
@@ -169,20 +286,54 @@
       border-color: var(--border-ink) !important;
     }
     body.theme-dark .bg-\[\#2D3A4A\] {
-      background-color: #E2E8F0 !important;
-      color: #1B222C !important;
+      background-color: #52C7A2 !important;
+      color: #091B14 !important;
     }
-    body.theme-dark .bg-\[\#2D3A4A\] .text-\[\#F7D47A\] {
-      color: #9A5B00 !important;
+    body.theme-dark .bg-\[\#2D3A4A\] .text-\[\#FFFDF7\] {
+      color: #091B14 !important;
     }
-    body.theme-dark .bg-\[\#F7D47A\],
-    body.theme-dark .bg-\[\#B3D9A6\],
-    body.theme-dark .bg-\[\#96CBE3\],
+    body.theme-dark .bg-\[\#F7D47A\] {
+      background-color: #E5B869 !important;
+      color: #1E1608 !important;
+    }
+    body.theme-dark .bg-\[\#B3D9A6\] {
+      background-color: #52C7A2 !important;
+      color: #091B14 !important;
+    }
+    body.theme-dark .bg-\[\#96CBE3\] {
+      background-color: #5FA8D3 !important;
+      color: #0A1924 !important;
+    }
     body.theme-dark .bg-\[\#F0A195\] {
-      color: #1B222C !important;
+      background-color: #F28C5E !important;
+      color: #1F0F08 !important;
+    }
+    body.theme-dark .bg-\[\#96CBE3\]\/20,
+    body.theme-dark .bg-\[\#96CBE3\]\/25,
+    body.theme-dark .bg-\[\#96CBE3\]\/30,
+    body.theme-dark .bg-\[\#96CBE3\]\/35 {
+      background-color: rgba(82, 199, 162, 0.11) !important;
+    }
+    body.theme-dark .bg-\[\#F7D47A\]\/20,
+    body.theme-dark .bg-\[\#F7D47A\]\/25,
+    body.theme-dark .bg-\[\#F7D47A\]\/35,
+    body.theme-dark .bg-\[\#F7D47A\]\/40 {
+      background-color: rgba(229, 184, 105, 0.14) !important;
+    }
+    body.theme-dark .bg-\[\#F0A195\]\/20,
+    body.theme-dark .bg-\[\#F0A195\]\/25,
+    body.theme-dark .bg-\[\#F0A195\]\/30,
+    body.theme-dark .bg-\[\#F0A195\]\/35 {
+      background-color: rgba(242, 140, 94, 0.16) !important;
+    }
+    body.theme-dark .bg-\[\#B3D9A6\]\/20,
+    body.theme-dark .bg-\[\#B3D9A6\]\/35,
+    body.theme-dark .bg-\[\#B3D9A6\]\/40,
+    body.theme-dark .bg-\[\#B3D9A6\]\/50 {
+      background-color: rgba(82, 199, 162, 0.15) !important;
     }
     body.theme-dark .watermark-map {
-      opacity: 0.08 !important;
+      opacity: 0.03 !important;
       mix-blend-mode: screen !important;
       filter: invert(1);
     }
@@ -498,21 +649,22 @@
         <div class="flex items-center gap-3 sm:gap-4">
           <div id="heroIllustrationBox" role="button" tabindex="0" title="點我切換可愛旅伴插圖" class="w-28 h-24 sm:w-44 sm:h-32 rounded-2xl bg-[#FFFDF7] border-2 border-[#2D3A4A] shadow-[2px_2px_0px_#2D3A4A] flex items-center justify-center overflow-hidden shrink-0 p-1 cursor-pointer hover:scale-[1.02] transition-transform"></div>
 
-          <div class="min-w-0 flex-1 space-y-1">
+          <div class="min-w-0 flex-1 space-y-1.5">
             <div class="flex flex-wrap items-center gap-1.5">
               <span id="tripCityBadge" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#B3D9A6] border-2 border-[#2D3A4A]">台南 Tainan</span>
               <span id="tripDaysBadge" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#F7D47A] border-2 border-[#2D3A4A] tabular-nums">3 天 2 夜</span>
               <span id="tripCountdownBadge" class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-bold bg-[#F0A195] border-2 border-[#2D3A4A] tabular-nums">⏳ 設定出發日倒數</span>
             </div>
+            <div id="tripDatesDisplay" class="text-xs sm:text-sm font-bold text-[#E5B869] tabular-nums"></div>
             <div class="flex items-start justify-between gap-2">
-              <h1 id="tripTitleDisplay" class="text-base sm:text-xl font-bold leading-snug">台南古蹟廟宇與小吃之旅</h1>
+              <h1 id="tripTitleDisplay" class="font-editorial text-xl sm:text-3xl font-black leading-tight">台南古蹟廟宇與小吃之旅</h1>
               <button type="button" id="btnEditTripMeta" class="ehon-pill shrink-0 px-3 py-1 bg-[#FFFDF7] hover:bg-[#F7D47A] text-xs font-bold">編輯</button>
             </div>
-            <div id="tripDatesDisplay" class="text-xs text-muted tabular-nums"></div>
             <button type="button" id="btnQuickJumpFlights" class="hidden w-full text-left text-xs font-bold bg-[#96CBE3]/35 hover:bg-[#96CBE3]/60 px-2.5 py-1.5 rounded-xl border border-[#2D3A4A] transition-colors tabular-nums" title="查看與更換航班">
               ✈️ 去程 <span id="summaryOutbound">--</span>／回程 <span id="summaryInbound">--</span> <span class="underline ml-1">換班機</span>
             </button>
-            <p id="tripGoalDisplay" class="hidden sm:block text-xs text-muted line-clamp-2"></p>
+            <p id="tripGoalDisplay" class="text-sm text-muted leading-relaxed line-clamp-2"></p>
+            <div id="heroRoutePills" class="flex flex-wrap gap-1.5 pt-1"></div>
           </div>
         </div>
 
@@ -565,10 +717,10 @@
 
     <!-- 左側主欄：每日行程 -->
     <section id="panelItinerary" class="lg:col-span-8 space-y-3">
-      <!-- 上方日期切換 -->
-      <div class="flex items-center gap-2 overflow-x-auto no-scrollbar scroll-fade-x pb-1 pr-6">
-        <div id="dayTabsContainer" class="flex items-center gap-2"></div>
-        <button type="button" id="btnAddDay" class="shrink-0 ehon-pill px-3 py-1.5 bg-[#FFFDF7] hover:bg-[#B3D9A6] text-xs font-bold">
+      <!-- 上方置頂日期切換 -->
+      <div class="sticky top-[61px] sm:top-[65px] z-20 muse-sticky-days -mx-1 px-1 py-2 flex items-center gap-2 overflow-x-auto no-scrollbar">
+        <div id="dayTabsContainer" class="flex items-stretch gap-2 flex-1"></div>
+        <button type="button" id="btnAddDay" class="shrink-0 ehon-pill px-3.5 py-2 bg-[#FFFDF7] hover:bg-[#B3D9A6] text-xs font-bold self-center">
           + 天數
         </button>
       </div>
@@ -636,8 +788,8 @@
       </div>
 
       <!-- 下方時間軸 -->
-      <div id="itineraryTimelineWrapper" class="relative pl-5 sm:pl-6">
-        <div class="absolute left-2 sm:left-2.5 top-3 bottom-3 w-[3px] bg-[#2D3A4A] rounded-full"></div>
+      <div id="itineraryTimelineWrapper" class="relative pl-5 sm:pl-7">
+        <div class="absolute left-2 sm:left-2.5 top-48 bottom-6 border-l-2 border-dashed border-[#52C7A2]/45 pointer-events-none"></div>
         <div id="itineraryList" class="space-y-3"></div>
       </div>
     </section>
@@ -4624,11 +4776,16 @@
       let library = loadLibrary();
       let state = library.trips.find(t => t.id === library.activeTripId) || library.trips[0];
 
-      // 使用者偏好（深色模式、減少動畫、桌機側欄分頁）
-      let prefs = { darkMode: false, reduceMotion: false, desktopTab: 'hotel' };
+      // 使用者偏好（預設森林深色易讀模式，可於選單切換淺色和紙）
+      let prefs = { darkMode: true, reduceMotion: false, desktopTab: 'hotel', museThemeInit: true };
       try {
         const savedPrefs = JSON.parse(localStorage.getItem(PREFS_STORAGE_KEY) || '{}');
         prefs = Object.assign(prefs, savedPrefs);
+        if (!savedPrefs || !savedPrefs.museThemeInit) {
+          prefs.darkMode = true;
+          prefs.museThemeInit = true;
+          localStorage.setItem(PREFS_STORAGE_KEY, JSON.stringify(prefs));
+        }
       } catch (e) {}
       let reduceMotion = Boolean(prefs.reduceMotion);
 
@@ -4641,9 +4798,9 @@
         document.body.classList.toggle('reduce-motion', Boolean(prefs.reduceMotion));
         reduceMotion = Boolean(prefs.reduceMotion);
         const themeMeta = document.getElementById('themeColorMeta');
-        if (themeMeta) themeMeta.setAttribute('content', prefs.darkMode ? '#1B222C' : '#FFFDF7');
+        if (themeMeta) themeMeta.setAttribute('content', prefs.darkMode ? '#0E1512' : '#FFFDF7');
         const darkBtn = document.getElementById('btnToggleDark');
-        if (darkBtn) darkBtn.textContent = prefs.darkMode ? '☀️ 切換淺色和紙模式' : '🌙 護眼深色模式';
+        if (darkBtn) darkBtn.textContent = prefs.darkMode ? '☀️ 切換淺色和紙模式' : '🌙 森林深色易讀模式';
         const motBtn = document.getElementById('btnToggleMotion');
         if (motBtn) motBtn.textContent = prefs.reduceMotion ? '✨ 減少動態效果：開' : '✨ 減少動態效果：關';
       }
@@ -5099,6 +5256,101 @@
         badge.textContent = diffDays > 0 ? `🎉 倒數 ${diffDays} 天` : diffDays === 0 ? '✈️ 今天出發！' : '📸 旅途進行中';
       }
 
+      function getDayBannerArtwork(cityKey, dayTheme, dayIdx) {
+        const txt = `${cityKey || ''} ${dayTheme || ''}`;
+        if (/平溪|十分|天燈|菁桐/.test(txt)) {
+          return `<svg viewBox="0 0 800 260" preserveAspectRatio="xMidYMid slice" class="w-full h-full"><defs><linearGradient id="bgSky${dayIdx}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#0C131C"/><stop offset="60%" stop-color="#1E2822"/><stop offset="100%" stop-color="#0E1512"/></linearGradient></defs><rect width="800" height="260" fill="url(#bgSky${dayIdx})"/><path d="M0 215 Q180 170 390 200 T800 185 L800 260 L0 260 Z" fill="#111A15"/><g fill="#F28C5E" opacity="0.92"><path d="M120 75 l18-24 18 24-7 22h-22z"/><path d="M270 42 l22-28 22 28-8 26h-28z" fill="#F7D47A"/><path d="M440 65 l16-20 16 20-6 18h-20z"/><path d="M580 35 l24-30 24 30-9 28h-30z" fill="#F7D47A"/><path d="M695 88 l15-19 15 19-5 17h-20z"/><path d="M195 128 l14-18 14 18-5 16h-18z" fill="#F7D47A"/><path d="M365 118 l19-25 19 25-7 22h-24z"/><path d="M510 120 l15-19 15 19-6 18h-18z" fill="#F7D47A"/></g></svg>`;
+        }
+        if (/九份|金瓜石|瑞芳|老街/.test(txt)) {
+          return `<svg viewBox="0 0 800 260" preserveAspectRatio="xMidYMid slice" class="w-full h-full"><defs><linearGradient id="bgJf${dayIdx}" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#121C29"/><stop offset="55%" stop-color="#1C272B"/><stop offset="100%" stop-color="#0E1512"/></linearGradient></defs><rect width="800" height="260" fill="url(#bgJf${dayIdx})"/><path d="M0 175 L160 110 L350 155 L560 95 L800 150 L800 260 L0 260 Z" fill="#131C19"/><g fill="#F06A50"><ellipse cx="220" cy="70" rx="14" ry="18"/><ellipse cx="290" cy="86" rx="13" ry="16" fill="#F7B267"/><ellipse cx="465" cy="64" rx="16" ry="20"/><ellipse cx="530" cy="82" rx="13" ry="17" fill="#F7B267"/><ellipse cx="620" cy="96" rx="15" ry="19"/><ellipse cx="380" cy="112" rx="12" ry="15" fill="#F7B267"/><ellipse cx="705" cy="75" rx="18" ry="22"/></g></svg>`;
+        }
+        if (/日月潭|湖|潭/.test(txt)) {
+          return `<svg viewBox="0 0 800 260" preserveAspectRatio="xMidYMid slice" class="w-full h-full"><defs><linearGradient id="bgSml${dayIdx}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#0D2228"/><stop offset="55%" stop-color="#1A3A3A"/><stop offset="100%" stop-color="#0E1B1A"/></linearGradient></defs><rect width="800" height="260" fill="url(#bgSml${dayIdx})"/><circle cx="630" cy="62" r="28" fill="#F7D47A" opacity="0.22"/><path d="M0 155 Q200 95 410 140 T800 120 L800 190 L0 190 Z" fill="#122B28"/><rect x="0" y="175" width="800" height="85" fill="#174645" opacity="0.72"/><path d="M80 205 H720 M160 225 H650" stroke="#52C7A2" stroke-width="2" stroke-opacity="0.32" stroke-dasharray="14 10"/></svg>`;
+        }
+        if (/阿里山|清境|山|日出/.test(txt)) {
+          return `<svg viewBox="0 0 800 260" preserveAspectRatio="xMidYMid slice" class="w-full h-full"><defs><linearGradient id="bgMtn${dayIdx}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#1A1D29"/><stop offset="55%" stop-color="#2D2620"/><stop offset="100%" stop-color="#0E1512"/></linearGradient></defs><rect width="800" height="260" fill="url(#bgMtn${dayIdx})"/><circle cx="580" cy="110" r="46" fill="#F28C5E" opacity="0.38"/><path d="M0 175 L190 95 L370 150 L570 85 L800 165 L800 260 L0 260 Z" fill="#16211D"/><path d="M0 205 Q250 175 500 205 T800 195 L800 260 L0 260 Z" fill="#52C7A2" opacity="0.14"/></svg>`;
+        }
+        if (/高雄|墾丁|海岸|海|澎湖|綠島|蘭嶼|小琉球/.test(txt)) {
+          return `<svg viewBox="0 0 800 260" preserveAspectRatio="xMidYMid slice" class="w-full h-full"><defs><linearGradient id="bgSea${dayIdx}" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#112233"/><stop offset="55%" stop-color="#1E3C45"/><stop offset="100%" stop-color="#0E1918"/></linearGradient></defs><rect width="800" height="260" fill="url(#bgSea${dayIdx})"/><circle cx="620" cy="78" r="34" fill="#F28C5E" opacity="0.35"/><path d="M0 175 Q220 150 440 175 T800 170 L800 260 L0 260 Z" fill="#133336"/><path d="M0 205 Q190 190 380 208 T800 200" fill="none" stroke="#52C7A2" stroke-width="2.5" opacity="0.4"/></svg>`;
+        }
+        return `<svg viewBox="0 0 800 260" preserveAspectRatio="xMidYMid slice" class="w-full h-full"><defs><linearGradient id="bgDef${dayIdx}" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#111C1B"/><stop offset="60%" stop-color="#1B2E26"/><stop offset="100%" stop-color="#0E1512"/></linearGradient></defs><rect width="800" height="260" fill="url(#bgDef${dayIdx})"/><circle cx="650" cy="65" r="32" fill="#52C7A2" opacity="0.16"/><path d="M0 195 Q210 135 420 175 T800 150 L800 260 L0 260 Z" fill="#131E1A"/><circle cx="200" cy="78" r="3" fill="#F7D47A" opacity="0.6"/><circle cx="340" cy="52" r="2.5" fill="#52C7A2" opacity="0.65"/><circle cx="490" cy="84" r="3" fill="#F28C5E" opacity="0.55"/></svg>`;
+      }
+
+      function getItemStayMins(item) {
+        if (item && Number(item.stayMins) > 0) return Math.max(5, Math.min(720, Math.round(Number(item.stayMins))));
+        const r = item ? parseTimeRange(item.time) : null;
+        if (r && r.e > r.s) return Math.max(5, Math.min(720, r.e - r.s));
+        return defaultDuration(item && item.category);
+      }
+
+      function inferTransitLeg(curItem, nextItem, dayCity) {
+        if (!curItem || !nextItem) return { mins: 10, modeText: '移動', icon: '🚗', costText: '' };
+        const hasExplicit = Number.isFinite(Number(curItem.transitToNextMins)) && Number(curItem.transitToNextMins) >= 0;
+        const rc = parseTimeRange(curItem.time), rn = parseTimeRange(nextItem.time);
+        const rawGap = (rc && rn && rn.s >= rc.e) ? (rn.s - rc.e) : 10;
+        const mins = hasExplicit ? Math.max(0, Math.min(360, Math.round(Number(curItem.transitToNextMins)))) : Math.max(5, Math.min(90, rawGap || 10));
+        const aAddr = String(curItem.address || '') + ' ' + String(curItem.title || '');
+        const bAddr = String(nextItem.address || '') + ' ' + String(nextItem.title || '');
+        const sameStreet = /老街|夜市|碼頭|園區|商圈/.test(aAddr) && /老街|夜市|碼頭|園區|商圈/.test(bAddr);
+        if (mins <= 8 || sameStreet) {
+          return { mins, modeText: '步行 免費', icon: '🚶', costText: `${cleanEntityName(curItem.title)} → ${cleanEntityName(nextItem.title)}` };
+        }
+        const mPref = (typeof state !== 'undefined' && state && state.transportMode) || 'auto';
+        if (mPref === 'drive') {
+          return { mins, modeText: '開車移動', icon: '🚗', costText: `${cleanEntityName(curItem.title)} → ${cleanEntityName(nextItem.title)}` };
+        }
+        return { mins, modeText: '公車 / 大眾運輸', icon: '🚌', costText: `${cleanEntityName(curItem.title)} → ${cleanEntityName(nextItem.title)}` };
+      }
+
+      function ensureDayTimesSnapshot(day) {
+        if (!day || Array.isArray(day._origTimesSnapshot) || !Array.isArray(day.items)) return;
+        day._origTimesSnapshot = day.items.map(it => ({
+          id: it.id,
+          time: it.time,
+          stayMins: it.stayMins,
+          transitToNextMins: it.transitToNextMins,
+          done: Boolean(it.done),
+          arrivedAtStr: it.arrivedAtStr || ''
+        }));
+      }
+
+      function cascadeRecalculateDayFrom(day, startIdx, overrideStartMins) {
+        if (!day || !Array.isArray(day.items) || startIdx < 0 || startIdx >= day.items.length) return;
+        let cursor = overrideStartMins;
+        if (cursor === null || cursor === undefined) {
+          const r = parseTimeRange(day.items[startIdx].time);
+          cursor = r ? r.s : 9 * 60;
+        }
+        for (let i = startIdx; i < day.items.length; i++) {
+          const cur = day.items[i];
+          const preLeg = i < day.items.length - 1 ? inferTransitLeg(cur, day.items[i + 1], day.cityKey || (state && state.cityKey) || '') : null;
+          const stay = getItemStayMins(cur);
+          cur.stayMins = stay;
+          cur.time = fmtRange(cursor, cursor + stay);
+          if (preLeg) {
+            cur.transitToNextMins = preLeg.mins;
+            cursor = cursor + stay + preLeg.mins;
+          }
+        }
+      }
+
+      function restoreDayOrigTimes(day) {
+        if (!day || !Array.isArray(day._origTimesSnapshot) || !Array.isArray(day.items)) return false;
+        const map = new Map(day._origTimesSnapshot.map(s => [s.id, s]));
+        day.items.forEach(it => {
+          const snap = map.get(it.id);
+          if (snap) {
+            it.time = snap.time;
+            if (snap.stayMins !== undefined) it.stayMins = snap.stayMins; else delete it.stayMins;
+            if (snap.transitToNextMins !== undefined) it.transitToNextMins = snap.transitToNextMins; else delete it.transitToNextMins;
+            it.done = snap.done;
+            if (snap.arrivedAtStr) it.arrivedAtStr = snap.arrivedAtStr; else delete it.arrivedAtStr;
+          }
+        });
+        delete day._origTimesSnapshot;
+        return true;
+      }
+
       let heroMascotIdx = -1;
       function renderHeaderAndStats() {
         document.getElementById('heroIllustrationBox').innerHTML = getDestinationSVG(state.cityKey, state.transportMode, heroMascotIdx);
@@ -5109,6 +5361,15 @@
         document.getElementById('tripGoalDisplay').textContent = state.goal;
         document.getElementById('tripLibCount').textContent = String(library.trips.length);
         updateCountdownBadge();
+
+        const pillsEl = document.getElementById('heroRoutePills');
+        if (pillsEl && Array.isArray(state.days)) {
+          pillsEl.innerHTML = state.days.map((d, idx) => {
+            const stops = (d.items || []).filter(x => ['景點', '美食'].includes(x.category)).map(x => cleanEntityName(x.title)).filter(Boolean).slice(0, 3);
+            const summary = stops.length ? stops.join(' → ') : (d.cityKey || d.theme || '');
+            return `<button type="button" data-hero-day="${idx}" class="hero-day-jump inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border border-[#2D3A4A]/40 bg-[#96CBE3]/25 hover:bg-[#F7D47A]/40 transition-colors"><span class="text-[#52C7A2] font-extrabold">Day ${d.dayNumber}</span><span class="truncate max-w-[200px] sm:max-w-[280px]">${escapeHtml(summary)}</span></button>`;
+          }).join('');
+        }
 
         const dAirEl = document.getElementById('departAirportSelect');
         const rAirEl = document.getElementById('returnAirportSelect');
@@ -5130,11 +5391,16 @@
         if (activeDayIndex >= state.days.length) activeDayIndex = Math.max(0, state.days.length - 1);
         container.innerHTML = state.days.map((day, idx) => {
           const active = idx === activeDayIndex;
-          const dm = String(day.dateLabel || '').match(/^\d{4}\/(\d{2})\/(\d{2})/);
-          const dateShort = dm ? ` ${Number(dm[1])}/${Number(dm[2])}` : '';
+          const dm = String(day.dateLabel || '').match(/^\d{4}\/(\d{2})\/(\d{2})\s*(?:\((.)\))?/);
+          const dateShort = dm ? `${Number(dm[1])}/${Number(dm[2])}${dm[3] ? ' ' + dm[3] : ''}` : '';
           const wx = getWeatherForDayIdx(idx);
           const wxStr = wx ? ` ${wx.icon}${wx.max}°` : '';
-          return `<button type="button" class="day-tab-btn ehon-pill shrink-0 px-3.5 py-1.5 text-xs font-bold tabular-nums ${active ? 'bg-[#F7D47A] ehon-btn-raised' : 'bg-[#FFFDF7]'}" data-day-idx="${idx}" aria-pressed="${active}">Day ${day.dayNumber}${dateShort}${wxStr}</button>`;
+          const areaShort = (day.cityKey || state.cityKey || '').slice(0, 6);
+          const subLine = [dateShort, areaShort].filter(Boolean).join(' · ') + wxStr;
+          return `<button type="button" class="day-tab-btn shrink-0 min-w-[96px] sm:min-w-[116px] flex-1 max-w-[180px] rounded-2xl border-2 px-3 py-2 text-center transition-all tabular-nums ${active ? 'bg-[#F7D47A] border-[#2D3A4A] ehon-btn-raised' : 'bg-[#FFFDF7] border-[#2D3A4A]/40 opacity-85 hover:opacity-100'}" data-day-idx="${idx}" aria-pressed="${active}">
+            <div class="text-sm sm:text-base font-extrabold leading-tight">Day ${day.dayNumber}</div>
+            <div class="text-[11px] sm:text-xs font-bold opacity-85 truncate mt-0.5">${escapeHtml(subLine || '當日行程')}</div>
+          </button>`;
         }).join('');
         const activeTab = container.querySelector('[aria-pressed="true"]');
         const scroller = container.parentElement;
@@ -5330,11 +5596,22 @@
 
         const nDays = state.days.length;
         const canDrag = activeCategoryFilter === 'all' && !q;
-        const cardsHtml = filteredItems.map((item) => {
+        const getMealBadge = (item) => {
+          if (item.category !== '餐廳') return item.category;
+          const r = parseTimeRange(item.time);
+          if (!r) return '餐廳';
+          if (r.s < 10 * 60 + 30) return '早餐';
+          if (r.s < 15 * 60) return '午餐';
+          return '晚餐';
+        };
+
+        const cardsHtml = filteredItems.map((item, fIdx) => {
           const realIdx = day.items.findIndex(x => x.id === item.id);
           const role = itemRole(item, activeDayIndex, nDays);
           const draggableAttr = (canDrag && role === 'activity') ? 'draggable="true"' : '';
           const style = getCategoryStyle(item.category);
+          const displayCatLabel = getMealBadge(item);
+          const stayMins = getItemStayMins(item);
           const navQuery = item.mapsQuery || buildPlacePhotoQuery(item.category, item.title, item.address || dayCity);
           const mapsHref = getMapsUrl(navQuery);
           const photoUrl = getSpotPhotoUrl(item.category, item.title, navQuery);
@@ -5389,59 +5666,86 @@
           }
           const showItemPhoto = showPhotoMode && ['景點', '餐廳', '美食', '飯店'].includes(item.category);
 
+          let connectorHtml = '';
+          if (canDrag && fIdx < filteredItems.length - 1) {
+            const nextIt = filteredItems[fIdx + 1];
+            const leg = inferTransitLeg(item, nextIt, dayCity);
+            connectorHtml = `
+              <div class="muse-connector p-3 sm:px-4 sm:py-3 my-2 flex items-center justify-between gap-3 flex-wrap">
+                <div class="min-w-0 flex-1 space-y-0.5">
+                  <div class="text-sm font-bold flex items-center gap-1.5">
+                    <span>${leg.icon}</span>
+                    <span class="text-[#52C7A2]">${escapeHtml(leg.modeText)}</span>
+                  </div>
+                  <div class="text-xs sm:text-[13px] text-muted truncate">${escapeHtml(leg.costText)}</div>
+                </div>
+                <label class="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold shrink-0">
+                  <span class="text-muted">車程</span>
+                  <input type="number" min="0" max="360" step="5" value="${leg.mins}" data-id="${item.id}" class="transit-mins-input muse-num-input text-sm" aria-label="前往下一站車程分鐘數" />
+                  <span class="text-muted">分</span>
+                </label>
+              </div>
+            `;
+          }
+
           return `
             <div class="relative">
-              <div class="absolute -left-[22px] sm:-left-[24px] top-4 w-3.5 h-3.5 rounded-full ${style.bg} border-2 border-[#2D3A4A]"></div>
-              <article class="itinerary-card ehon-card-soft overflow-hidden shadow-[2px_2px_0px_#2D3A4A] bg-[#FFFDF7] transition-all" data-item-id="${item.id}" data-role="${role}" ${draggableAttr}>
+              <div class="absolute -left-[21px] sm:-left-[27px] top-6 w-3.5 h-3.5 rounded-full border-[3px] border-[#52C7A2] ${item.done ? 'bg-[#52C7A2]' : 'bg-[#0E1512]'}"></div>
+              <article class="itinerary-card ehon-card-soft overflow-hidden bg-[#FFFDF7] transition-all" data-item-id="${item.id}" data-role="${role}" ${draggableAttr}>
                 ${showItemPhoto ? `
-                  <div class="h-36 sm:h-44 w-full border-b-2 border-[#2D3A4A] overflow-hidden bg-[#96CBE3]/20 relative">
+                  <div class="h-36 sm:h-44 w-full border-b border-[#2D3A4A]/30 overflow-hidden bg-[#96CBE3]/20 relative">
                     <img src="${photoUrl}" loading="lazy" decoding="async" data-photo-cat="${escapeHtml(item.category)}" data-photo-query="${escapeHtml(navQuery)}" onerror="this.onerror=null;this.src='${photoFallback}';" alt="${escapeHtml(item.title)}" class="w-full h-full object-cover" />
-                    <span class="absolute top-2 left-2 px-2.5 py-0.5 rounded-full text-xs font-bold border-2 border-[#2D3A4A] ${style.bg}">${style.icon} ${escapeHtml(item.category)}</span>
-                    <a href="${mapsHref}" target="_blank" rel="noopener noreferrer" class="ext-nav-link absolute bottom-2 right-2 px-2.5 py-0.5 rounded-full text-[11px] font-bold bg-[#FFFDF7]/95 border border-[#2D3A4A] hover:bg-[#F7D47A]">📷 Google Maps 照片</a>
+                    <a href="${mapsHref}" target="_blank" rel="noopener noreferrer" class="ext-nav-link absolute bottom-2.5 right-2.5 px-3 py-1 rounded-full text-xs font-bold bg-[#FFFDF7]/95 border border-[#2D3A4A] hover:bg-[#F7D47A]">📷 Google Maps 照片</a>
                   </div>
                 ` : ''}
-                <div class="p-3.5 space-y-2">
-                  <div class="flex flex-wrap items-center justify-between gap-1.5">
-                    <div class="flex flex-wrap items-center gap-1.5">
-                      ${(canDrag && role === 'activity') ? `<span class="drag-handle text-muted px-1 text-sm hidden sm:inline" title="拖曳調整行程順序">⠿</span>` : ''}
-                      <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold border-2 border-[#2D3A4A] ${style.bg}">${style.icon} ${escapeHtml(item.category)}</span>
-                      <span class="text-xs font-bold bg-[#FFFDF7] border border-[#2D3A4A] px-2 py-0.5 rounded-full tabular-nums">${escapeHtml(item.time)}</span>
-                      ${item.mustVisit ? `<span class="text-xs font-bold bg-[#F0A195] border-2 border-[#2D3A4A] px-2 py-0.5 rounded-full">★ 必去</span>` : ''}
-                      ${item._overflow ? `<span class="text-xs font-bold bg-[#FFFDF7] border-2 border-[#B4533F] text-[#B4533F] px-2 py-0.5 rounded-full">⚠️ 時間來不及</span>` : ''}
-                      ${item._overlap ? `<span class="text-xs font-bold bg-[#FFFDF7] border-2 border-[#B4533F] text-[#B4533F] px-2 py-0.5 rounded-full">⚠️ 與前一項重疊</span>` : ''}
+                <div class="p-4 sm:p-5 space-y-3">
+                  <!-- 頂部大字時間 + 停留 + 分類膠囊 -->
+                  <div class="flex flex-wrap items-center justify-between gap-2">
+                    <div class="flex flex-wrap items-center gap-2">
+                      ${(canDrag && role === 'activity') ? `<span class="drag-handle text-muted px-0.5 text-base hidden sm:inline" title="拖曳調整行程順序">⠿</span>` : ''}
+                      <span class="text-lg sm:text-xl font-extrabold tracking-tight tabular-nums">${escapeHtml(item.time)}</span>
+                      <span class="text-xs font-bold bg-[#B3D9A6]/35 border border-[#2D3A4A]/40 px-2.5 py-0.5 rounded-full tabular-nums">停留 ${stayMins} 分</span>
+                      <span class="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold border border-[#2D3A4A]/50 bg-[#FFFDF7]">${style.icon} ${escapeHtml(displayCatLabel)}</span>
+                      ${item.mustVisit ? `<span class="text-xs font-bold bg-[#F0A195] px-2.5 py-0.5 rounded-full">★ 必去</span>` : ''}
+                      ${item.arrivedAtStr ? `<span class="text-xs font-bold bg-[#B3D9A6]/40 px-2.5 py-0.5 rounded-full tabular-nums">✓ ${escapeHtml(item.arrivedAtStr)} 抵達</span>` : ''}
+                      ${item._overflow ? `<span class="text-xs font-bold bg-[#F0A195]/30 border border-[#B4533F] px-2 py-0.5 rounded-full">⚠️ 時間來不及</span>` : ''}
+                      ${item._overlap ? `<span class="text-xs font-bold bg-[#F0A195]/30 border border-[#B4533F] px-2 py-0.5 rounded-full">⚠️ 與前一項重疊</span>` : ''}
                     </div>
-                    ${item.cost ? `<span class="text-xs font-bold bg-[#B3D9A6]/50 border border-[#2D3A4A] px-2 py-0.5 rounded-full tabular-nums">${escapeHtml(item.cost)}</span>` : ''}
+                    ${item.cost ? `<span class="text-xs sm:text-sm font-bold text-muted tabular-nums">${escapeHtml(item.cost)}</span>` : ''}
                   </div>
 
-                  <div>
-                    <h3 class="text-sm sm:text-base font-bold leading-snug ${item.done ? 'line-through opacity-55' : ''}">${escapeHtml(item.title)}</h3>
-                    <p class="text-xs text-muted mt-1 leading-relaxed">${escapeHtml(item.desc)}</p>
-                  </div>
-
+                  <!-- 大標題與清楚說明文字 -->
                   <div class="space-y-1.5">
-                    ${item.transport ? `<div class="inline-flex items-center gap-1 text-xs font-bold bg-[#96CBE3]/45 border border-[#2D3A4A] rounded-lg px-2 py-0.5">${item.transitMode === 'drive' ? '🚗' : '🚆'} ${escapeHtml(item.transport)}</div>` : ''}
+                    <h3 class="text-lg sm:text-xl font-bold leading-snug ${item.done ? 'opacity-80' : ''}">${escapeHtml(item.title)}</h3>
+                    <p class="text-sm sm:text-[15px] text-muted leading-relaxed">${escapeHtml(item.desc)}</p>
+                    ${item.address ? `<div class="text-xs sm:text-sm text-muted flex items-start gap-1.5 pt-0.5"><span>📍</span><span>${escapeHtml(item.address)}${item.hours && item.hours !== '全天開放' ? ` · ${escapeHtml(item.hours)}` : ''}</span></div>` : ''}
+                  </div>
+
+                  <!-- 交通接駁 / 特色小吃特別備註 / 附近美食 -->
+                  <div class="space-y-2">
+                    ${item.transport ? `<div class="inline-flex items-center gap-1.5 text-xs sm:text-sm font-bold bg-[#96CBE3]/25 border border-[#2D3A4A]/40 rounded-xl px-3 py-1.5">${item.transitMode === 'drive' ? '🚗' : '🚆'} ${escapeHtml(item.transport)}</div>` : ''}
                     ${(item.scheduleOptions && item.scheduleOptions.length) ? `
-                      <div class="bg-[#96CBE3]/25 border-2 border-[#2D3A4A] rounded-xl p-2.5 space-y-2 text-xs">
+                      <div class="bg-[#96CBE3]/20 border border-[#2D3A4A]/50 rounded-2xl p-3 space-y-2.5 text-xs sm:text-sm">
                         <div class="font-bold">${step2List.length ? '🕒 ① 選擇第一段出發班次（點選後自動更新下方轉乘時刻與後續行程）：' : '🕒 選擇出發班次（點選後自動順延調整後續行程與路線）：'}</div>
                         <div class="flex flex-wrap gap-1.5 tabular-nums">
                           ${item.scheduleOptions.map((opt, oIdx) => {
                             const isCur = oIdx === activeOptIdx || (activeOptIdx === -1 && item.time === opt.time);
-                            return `<button type="button" class="transit-slot-btn ehon-pill px-2.5 py-1 font-bold ${isCur ? 'bg-[#F7D47A]' : 'bg-[#FFFDF7]'}" data-item-id="${item.id}" data-opt-idx="${oIdx}">${escapeHtml(opt.label)}</button>`;
+                            return `<button type="button" class="transit-slot-btn ehon-pill px-3 py-1 text-xs sm:text-sm font-bold ${isCur ? 'bg-[#F7D47A]' : 'bg-[#FFFDF7]'}" data-item-id="${item.id}" data-opt-idx="${oIdx}">${escapeHtml(opt.label)}</button>`;
                           }).join('')}
                         </div>
                         ${step2List.length ? `
-                          <div class="bg-[#FFFDF7]/85 border border-dashed border-[#2D3A4A]/50 rounded-xl p-2 space-y-1.5">
-                            <div class="font-bold text-[#2D3A4A]">${escapeHtml((activeOpt && activeOpt.step2Title) || '🔄 ② 接下來轉乘接駁時刻表：')}</div>
+                          <div class="bg-[#FFFDF7]/85 border border-dashed border-[#2D3A4A]/40 rounded-xl p-2.5 space-y-2">
+                            <div class="font-bold">${escapeHtml((activeOpt && activeOpt.step2Title) || '🔄 ② 接下來轉乘接駁時刻表：')}</div>
                             <div class="flex flex-wrap gap-1.5 tabular-nums">
                               ${step2List.map((tr, tIdx) => {
                                 const isCur2 = tIdx === activeStep2Idx;
-                                return `<button type="button" class="transit-step2-btn ehon-pill px-2.5 py-1 font-bold ${isCur2 ? 'bg-[#B3D9A6]' : 'bg-[#FFFDF7]'}" data-item-id="${item.id}" data-step1-idx="${Math.max(0, activeOptIdx)}" data-step2-idx="${tIdx}">${escapeHtml(tr.label)}</button>`;
+                                return `<button type="button" class="transit-step2-btn ehon-pill px-3 py-1 text-xs sm:text-sm font-bold ${isCur2 ? 'bg-[#B3D9A6]' : 'bg-[#FFFDF7]'}" data-item-id="${item.id}" data-step1-idx="${Math.max(0, activeOptIdx)}" data-step2-idx="${tIdx}">${escapeHtml(tr.label)}</button>`;
                               }).join('')}
                             </div>
                           </div>
                         ` : ''}
                         ${(itemVerifyUrl || itemBookUrl || itemTraVerifyUrl || itemTraBookUrl) ? `
-                          <div class="flex flex-wrap gap-3 pt-1 border-t border-dashed border-[#2D3A4A]/20 text-xs font-bold">
+                          <div class="flex flex-wrap gap-3 pt-1.5 border-t border-dashed border-[#2D3A4A]/20 text-xs sm:text-sm font-bold">
                             ${itemVerifyUrl ? `<a href="${itemVerifyUrl}" target="_blank" rel="noopener noreferrer" class="flight-ext-link underline">🔍 驗證高鐵官方時刻表</a>` : ''}
                             ${itemBookUrl ? `<a href="${itemBookUrl}" target="_blank" rel="noopener noreferrer" class="flight-ext-link underline">🎫 高鐵網路訂票</a>` : ''}
                             ${itemTraVerifyUrl ? `<a href="${itemTraVerifyUrl}" target="_blank" rel="noopener noreferrer" class="flight-ext-link underline">${escapeHtml(itemTraVerifyLabel)}</a>` : ''}
@@ -5450,66 +5754,80 @@
                         ` : ''}
                       </div>
                     ` : ''}
-                    ${item.transferInfo ? `<div class="text-xs bg-[#B3D9A6]/35 border border-[#2D3A4A] rounded-xl px-2.5 py-1.5 leading-relaxed">${escapeHtml(item.transferInfo)}</div>` : ''}
+                    ${item.transferInfo ? `<div class="text-xs sm:text-sm bg-[#B3D9A6]/25 border border-[#2D3A4A]/40 rounded-xl px-3 py-2 leading-relaxed">${escapeHtml(item.transferInfo)}</div>` : ''}
                     ${item.snackNote ? `
-                      <div class="text-xs bg-[#F0A195]/25 border-2 border-[#2D3A4A] rounded-xl px-2.5 py-1.5 leading-relaxed">
+                      <div class="muse-warn-box px-3.5 py-2.5 text-sm leading-relaxed">
                         <span class="font-bold">🍢 特色小吃特別備註：</span>${escapeHtml(item.snackNote)}
                       </div>
                     ` : ''}
                     ${item.nearbyFood ? `
-                      <div class="text-xs bg-[#F7D47A]/40 border border-[#2D3A4A] rounded-xl px-2.5 py-2 space-y-1">
-                        <div class="font-bold">🍜 附近美食推薦（點擊直接導航）：</div>
+                      <div class="bg-[#F7D47A]/20 border border-[#2D3A4A]/40 rounded-2xl px-3 py-2.5 space-y-1.5 text-xs sm:text-sm">
+                        <div class="font-bold">🍜 附近美食推薦（點擊看距離與時間）：</div>
                         <div class="flex flex-wrap gap-1.5">
                           ${String(item.nearbyFood).split(/[、，,/]+/).map(f => f.trim()).filter(Boolean).map(foodName => {
                             const foodQuery = `${foodName} ${dayCity}`.trim();
                             const foodUrl = getDirectionsUrl(foodQuery);
-                            return `<a href="${foodUrl}" data-nav-dest="${escapeHtml(foodQuery)}" target="_blank" rel="noopener noreferrer" class="ext-nav-link inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full bg-[#FFFDF7] hover:bg-[#B3D9A6] border border-[#2D3A4A] font-bold">📍 ${escapeHtml(foodName)}</a>`;
+                            return `<a href="${foodUrl}" data-nav-dest="${escapeHtml(foodQuery)}" target="_blank" rel="noopener noreferrer" class="ext-nav-link inline-flex items-center gap-1 px-3 py-1 rounded-full bg-[#FFFDF7] hover:bg-[#B3D9A6] border border-[#2D3A4A]/50 font-bold">📍 ${escapeHtml(foodName)}</a>`;
                           }).join('')}
                         </div>
                       </div>
                     ` : ''}
                   </div>
 
-                  <div class="pt-2 border-t border-dashed border-[#2D3A4A]/25 flex flex-wrap items-center justify-between gap-2 text-xs">
-                    <div class="flex items-center gap-1.5">
-                      <button type="button" class="item-done-btn ehon-pill px-2.5 py-1 font-bold ${item.done ? 'bg-[#B3D9A6]' : 'bg-[#FFFDF7]'}" data-id="${item.id}">${item.done ? '✓ 已完成' : '○ 標記已訪'}</button>
-                      <button type="button" class="item-toggle-detail font-bold underline px-1.5 py-1" data-id="${item.id}">${item.expanded ? '收合' : '詳情/調整'}</button>
-                    </div>
+                  <!-- 主要大按鈕列：Google Maps 導航 + 我到了（即時重算後續時間）-->
+                  <div class="flex flex-wrap items-center gap-2.5 pt-1">
+                    <a href="${getDirectionsUrl(navQuery)}" data-nav-dest="${escapeHtml(navQuery)}" target="_blank" rel="noopener noreferrer" class="ext-nav-link btn-gmap-nav inline-flex items-center justify-center gap-1.5 px-4 py-2 text-sm sm:text-[15px]">📍 Google Maps 導航</a>
+                    ${item.arrivedAtStr
+                      ? `<button type="button" class="btn-extend-stay btn-checkin-done inline-flex items-center gap-1.5 px-3.5 py-2 text-sm" data-id="${item.id}" title="目前站點多待 30 分鐘並順延後續行程">✓ 已抵達 ${escapeHtml(item.arrivedAtStr)} · 多待 +30 分</button>`
+                      : `<button type="button" class="btn-arrived-now btn-checkin-coral inline-flex items-center gap-1.5 px-4 py-2 text-sm sm:text-[15px]" data-id="${item.id}" title="以現在時間起算本站並自動重算後續行程時刻">🙋 我到了</button>`
+                    }
+                  </div>
+
+                  <!-- 底部停留分鐘調整 ＋ 換掉 / 記帳 / 詳情 -->
+                  <div class="pt-2.5 border-t border-dashed border-[#2D3A4A]/25 flex flex-wrap items-center justify-between gap-2 text-xs sm:text-sm">
+                    <label class="inline-flex items-center gap-1.5 font-bold">
+                      <span class="text-muted">停留</span>
+                      <input type="number" min="5" max="720" step="15" value="${stayMins}" data-id="${item.id}" class="stay-mins-input muse-num-input text-sm" aria-label="停留分鐘數" />
+                      <span class="text-muted">分</span>
+                    </label>
                     <div class="flex items-center gap-1.5 flex-wrap">
-                      <button type="button" class="item-log-expense-btn ehon-pill px-2.5 py-1 bg-[#B3D9A6]/55 hover:bg-[#B3D9A6] font-bold" data-id="${item.id}" title="將此行程帶入開銷記帳">💰 記帳</button>
-                      <button type="button" class="item-regen-btn ehon-pill px-2.5 py-1 bg-[#F7D47A] font-bold" data-id="${item.id}">↻ 換掉</button>
-                      <a href="${getDirectionsUrl(navQuery)}" data-nav-dest="${escapeHtml(navQuery)}" target="_blank" rel="noopener noreferrer" class="ext-nav-link ehon-pill px-2.5 py-1 bg-[#96CBE3]/65 font-bold">📍 導航</a>
+                      <button type="button" class="item-log-expense-btn ehon-pill px-2.5 py-1 bg-[#B3D9A6]/35 font-bold text-xs" data-id="${item.id}" title="帶入記帳">💰 記帳</button>
+                      <button type="button" class="item-regen-btn ehon-pill px-2.5 py-1 bg-[#F7D47A] font-bold text-xs" data-id="${item.id}">↻ 換掉</button>
+                      <button type="button" class="item-toggle-detail ehon-pill px-2.5 py-1 bg-[#FFFDF7] font-bold text-xs" data-id="${item.id}">${item.expanded ? '收合' : '詳情/編輯'}</button>
                     </div>
                   </div>
 
                   ${item.expanded ? `
-                    <div class="bg-[#F7D47A]/20 rounded-xl p-3 text-xs space-y-2 border-2 border-[#2D3A4A]">
+                    <div class="bg-[#F7D47A]/20 rounded-xl p-3 text-xs sm:text-sm space-y-2 border border-[#2D3A4A]/50">
                       <div><strong>📍 地址：</strong>${escapeHtml(item.address || '未填寫')}</div>
-                      <div><strong>🕒 時間：</strong>${escapeHtml(item.hours || '依現場為準')}</div>
-                      <div class="flex flex-wrap items-center gap-1.5 pt-1 border-t border-[#2D3A4A]/20">
+                      <div><strong>🕒 營業/開放：</strong>${escapeHtml(item.hours || '依現場為準')}</div>
+                      <div class="flex flex-wrap items-center gap-1.5 pt-1 border-t border-[#2D3A4A]/20 text-xs">
+                        <button type="button" class="item-done-btn ehon-pill px-3 py-1 font-bold ${item.done ? 'bg-[#B3D9A6]' : 'bg-[#FFFDF7]'}" data-id="${item.id}">${item.done ? '✓ 已訪' : '○ 標記已訪'}</button>
                         <button type="button" class="item-move-up ehon-pill px-3 py-1 bg-[#FFFDF7] font-bold disabled:opacity-30" ${realIdx === 0 ? 'disabled' : ''} data-id="${item.id}">↑ 上移</button>
                         <button type="button" class="item-move-down ehon-pill px-3 py-1 bg-[#FFFDF7] font-bold disabled:opacity-30" ${realIdx === day.items.length - 1 ? 'disabled' : ''} data-id="${item.id}">↓ 下移</button>
-                        <button type="button" class="item-edit-btn ehon-pill px-3 py-1 bg-[#96CBE3] font-bold" data-id="${item.id}">✏️ 編輯項目</button>
+                        <button type="button" class="item-edit-btn ehon-pill px-3 py-1 bg-[#96CBE3] font-bold" data-id="${item.id}">✏️ 編輯</button>
                         <button type="button" class="item-delete-btn ehon-pill px-3 py-1 bg-[#F0A195] font-bold" data-id="${item.id}">🗑️ 刪除</button>
                       </div>
                     </div>
                   ` : ''}
                 </div>
               </article>
+              ${connectorHtml}
             </div>
           `;
         }).join('');
 
-        let dayOverviewHtml = '';
-        if (activeCategoryFilter === 'all' && !q && filteredItems.length > 0) {
+        // 當日景觀大橫幅 + 住宿/交通膠囊 + 可摺疊路線小吃重點
+        let dayHeroAndBriefHtml = '';
+        if (activeCategoryFilter === 'all' && !q) {
           const rfDay = getRealFoodsForDest(dayCity);
           const transitItem = day.items.find(x => x.category === '交通');
+          const dayH = getActiveDayHotel();
+          const hasStay = dayH && dayH.name && !(dayH.name || '').includes('無須過夜');
+          const dateClean = String(day.dateLabel || '').replace(/^\d{4}\//, '');
+          const transitHeadline = transitItem ? (cleanEntityName(transitItem.title) + (transitItem.hours ? `・${transitItem.hours.split('（')[0]}` : '')) : '市區彈性移動';
+          const bannerArt = getDayBannerArtwork(dayCity, day.theme, activeDayIndex);
           const derivedRouteTip = day.routeTip || (transitItem ? `${transitItem.address || transitItem.title}｜${transitItem.transport || ''}`.replace(/｜$/, '') : '');
-          const derivedHotelTip = (day.hotel && day.hotel.highlights && !(day.hotel.name || '').includes('無須過夜')) ? day.hotel.highlights : '';
-          const stopSeq = day.items
-            .filter(x => ['景點', '餐廳', '美食'].includes(x.category))
-            .map(x => cleanEntityName(x.title))
-            .filter(Boolean);
           const snackSet = [];
           const pushSnack = (txt) => {
             const clean = String(txt || '').trim();
@@ -5527,30 +5845,114 @@
               pushSnack(`推薦正餐：${rfDay.lunch1.title} / ${rfDay.dinner1.title}`);
             }
           }
-          dayOverviewHtml = `
-            <details open class="ehon-card-soft bg-[#FFFDF7] p-3.5 mb-3 shadow-[2px_2px_0px_#2D3A4A]">
-              <summary class="cursor-pointer font-bold text-xs sm:text-sm flex items-center justify-between gap-2 list-none">
-                <span>📋 Day ${day.dayNumber}（${escapeHtml(dayCity)}）路線動線重點 ＆ 特色小吃特別備註</span>
-                <span class="text-[11px] text-muted shrink-0">點擊收合/展開 ▾</span>
-              </summary>
-              <div class="mt-2.5 pt-2.5 border-t border-dashed border-[#2D3A4A]/25 space-y-2 text-xs leading-relaxed">
-                ${stopSeq.length ? `<div><strong>🗺️ 當日重點順遊：</strong>${stopSeq.map((s, idx) => `<span class="inline-block bg-[#96CBE3]/30 border border-[#2D3A4A]/40 rounded-lg px-1.5 py-0.5 mr-1 mb-1 font-bold">${idx + 1}. ${escapeHtml(s)}</span>`).join('')}</div>` : ''}
-                ${derivedRouteTip ? `<div class="bg-[#96CBE3]/20 border border-[#2D3A4A] rounded-xl px-2.5 py-1.5"><strong>🛣️ 路線與注意事項：</strong>${escapeHtml(derivedRouteTip)}</div>` : ''}
-                ${derivedHotelTip ? `<div class="bg-[#F7D47A]/25 border border-[#2D3A4A] rounded-xl px-2.5 py-1.5"><strong>🏨 住宿區域重點：</strong>${escapeHtml(derivedHotelTip)}</div>` : ''}
-                ${snackSet.length ? `
-                  <div class="bg-[#F0A195]/20 border-2 border-[#2D3A4A] rounded-xl px-2.5 py-2 space-y-1">
-                    <div class="font-bold">🍢 特色小吃特別備註（本日必吃清單）：</div>
-                    <ul class="list-disc pl-4 space-y-0.5">
-                      ${snackSet.map(sn => `<li>${escapeHtml(sn)}</li>`).join('')}
-                    </ul>
-                  </div>
-                ` : ''}
+
+          dayHeroAndBriefHtml = `
+            <div class="space-y-2.5 mb-3 -ml-5 sm:-ml-7">
+              <div class="relative rounded-2xl overflow-hidden border border-[#2D3A4A]/50 h-40 sm:h-48 shadow-md">
+                <div class="absolute inset-0">${bannerArt}</div>
+                <div class="absolute inset-0 bg-gradient-to-t from-black/80 via-black/35 to-transparent"></div>
+                <div class="absolute inset-x-0 bottom-0 p-4 text-white space-y-1">
+                  <div class="text-xs font-bold tracking-wider uppercase text-[#E5B869] tabular-nums">DAY ${day.dayNumber}${dateClean ? ` · ${escapeHtml(dateClean)}` : ''}</div>
+                  <div class="font-editorial text-xl sm:text-2xl font-black leading-snug text-white drop-shadow">${escapeHtml(day.theme)}</div>
+                  ${derivedRouteTip ? `<div class="text-xs sm:text-sm text-white/85 line-clamp-1">${escapeHtml(derivedRouteTip)}</div>` : ''}
+                </div>
               </div>
-            </details>
+
+              <div class="flex flex-wrap gap-2">
+                <button type="button" class="btn-jump-hotel ehon-card-soft px-3.5 py-2 text-xs sm:text-sm font-bold flex items-center gap-2 hover:bg-[#F7D47A]/20">
+                  <span class="text-[#52C7A2] font-extrabold">住宿</span>
+                  <span>${hasStay ? escapeHtml(cleanEntityName(dayH.name)) + (dayH.cost && dayH.cost !== '-' ? `（${escapeHtml(dayH.cost)}）` : '') : '今日返程（無須過夜）'}</span>
+                </button>
+                <div class="ehon-card-soft px-3.5 py-2 text-xs sm:text-sm font-bold flex items-center gap-2">
+                  <span class="text-[#52C7A2] font-extrabold">交通重點</span>
+                  <span class="truncate max-w-[260px] sm:max-w-[420px]">${escapeHtml(transitHeadline)}</span>
+                </div>
+              </div>
+
+              ${(derivedRouteTip || snackSet.length) ? `
+                <details open class="ehon-card-soft p-3.5">
+                  <summary class="cursor-pointer font-bold text-sm flex items-center justify-between gap-2 list-none">
+                    <span>🍢 Day ${day.dayNumber} 特色小吃特別備註 ＆ 路線注意事項</span>
+                    <span class="text-xs text-muted shrink-0">收合/展開 ▾</span>
+                  </summary>
+                  <div class="mt-2.5 pt-2.5 border-t border-dashed border-[#2D3A4A]/25 space-y-2 text-sm leading-relaxed">
+                    ${derivedRouteTip ? `<div class="bg-[#96CBE3]/20 border border-[#2D3A4A]/40 rounded-xl px-3 py-2"><strong>🛣️ 路線與注意：</strong>${escapeHtml(derivedRouteTip)}</div>` : ''}
+                    ${snackSet.length ? `
+                      <div class="muse-warn-box px-3.5 py-2.5 space-y-1">
+                        <div class="font-bold">🍢 必吃特色小吃清單：</div>
+                        <ul class="list-disc pl-5 space-y-1 text-[13px] sm:text-sm">
+                          ${snackSet.map(sn => `<li>${escapeHtml(sn)}</li>`).join('')}
+                        </ul>
+                      </div>
+                    ` : ''}
+                  </div>
+                </details>
+              ` : ''}
+            </div>
           `;
         }
 
-        listEl.innerHTML = dayOverviewHtml + cardsHtml + aggregatedFoodHtml;
+        const restoreBtnHtml = (canDrag && Array.isArray(day._origTimesSnapshot))
+          ? `<div class="pt-1 pb-2"><button type="button" class="btn-restore-orig-times ehon-pill px-4 py-2 bg-[#FFFDF7] text-sm font-bold hover:bg-[#F7D47A]/30">↺ 回到原訂時間</button></div>`
+          : '';
+
+        // 底部順路／公開美食與備選清單（不列入時間計算，可一鍵排進今天）
+        let optionalPicksHtml = '';
+        if (activeCategoryFilter === 'all' && !q) {
+          const poolCity = DESTINATION_POOLS[dayCity] || createUniversalPool(dayCity);
+          const rfDay = getRealFoodsForDest(dayCity);
+          const existingTitles = new Set(day.items.map(x => cleanEntityName(x.title)));
+          const candList = [];
+          const pushCand = (c, cat) => {
+            if (!c || !c.title) return;
+            const cn = cleanEntityName(c.title);
+            if (!cn || existingTitles.has(cn) || candList.some(x => cleanEntityName(x.title) === cn)) return;
+            candList.push({ ...c, category: c.category || cat });
+          };
+          if (rfDay) {
+            pushCand(rfDay.snack, '美食');
+            pushCand(rfDay.lunch2, '餐廳');
+            pushCand(rfDay.dinner2, '餐廳');
+          }
+          if (poolCity.alternatives) {
+            (poolCity.alternatives['美食'] || []).forEach(c => pushCand(c, '美食'));
+            (poolCity.alternatives['景點'] || []).forEach(c => pushCand(c, '景點'));
+            (poolCity.alternatives['餐廳'] || []).forEach(c => pushCand(c, '餐廳'));
+          }
+          if (candList.length) {
+            const topCands = candList.slice(0, 4);
+            optionalPicksHtml = `
+              <div class="mt-4 pt-4 border-t border-dashed border-[#2D3A4A]/30 -ml-5 sm:-ml-7 space-y-2.5">
+                <div>
+                  <h3 class="font-editorial text-lg sm:text-xl font-bold">✨ 順路美食與備選推薦</h3>
+                  <p class="text-xs sm:text-sm text-muted">不列入上方時間計算；若順路想吃想逛，點「＋ 排進今天」即會自動排入時間軸。</p>
+                </div>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  ${topCands.map((c, cIdx) => {
+                    const cQuery = c.mapsQuery || `${cleanEntityName(c.title)} ${dayCity}`.trim();
+                    const payload = escapeHtml(JSON.stringify({ category: c.category, title: c.title, address: c.address || dayCity, hours: c.hours || '依現場', cost: c.cost || '', transport: c.transport || '', snackNote: c.snackNote || '', desc: c.desc || '' }));
+                    return `
+                      <div class="ehon-card-soft p-3.5 space-y-2 flex flex-col justify-between">
+                        <div class="space-y-1">
+                          <div class="font-bold text-base leading-snug">${escapeHtml(c.title)}</div>
+                          <div class="text-xs text-muted">${escapeHtml(c.address || dayCity)}${c.hours ? ` · ${escapeHtml(c.hours)}` : ''}</div>
+                          <p class="text-sm text-muted leading-relaxed">${escapeHtml(c.snackNote || c.desc || '')}</p>
+                        </div>
+                        <div class="flex flex-wrap items-center gap-2 pt-2">
+                          <a href="${getDirectionsUrl(cQuery)}" data-nav-dest="${escapeHtml(cQuery)}" target="_blank" rel="noopener noreferrer" class="ext-nav-link btn-gmap-nav px-3 py-1.5 text-xs sm:text-sm">📍 導航</a>
+                          <a href="${getMapsUrl(cQuery)}" target="_blank" rel="noopener noreferrer" class="ext-nav-link ehon-pill px-3 py-1.5 bg-[#FFFDF7] text-xs font-bold">📷 照片</a>
+                          <button type="button" data-pick-json="${payload}" class="btn-schedule-pick ehon-pill px-3 py-1.5 bg-[#F7D47A] text-xs sm:text-sm font-bold ml-auto">＋ 排進今天</button>
+                        </div>
+                      </div>
+                    `;
+                  }).join('')}
+                </div>
+              </div>
+            `;
+          }
+        }
+
+        listEl.innerHTML = dayHeroAndBriefHtml + cardsHtml + restoreBtnHtml + optionalPicksHtml + aggregatedFoodHtml;
         hydrateRealPhotos(listEl);
         prefetchSwapGooglePhotos(dayCity);
       }
@@ -7808,6 +8210,89 @@
           }
 
           const day = state.days[activeDayIndex]; if (!day) return;
+          const jumpHotelBtn = e.target.closest('.btn-jump-hotel');
+          if (jumpHotelBtn) {
+            const pHotel = document.getElementById('panelHotel');
+            if (window.innerWidth < 1024) {
+              const hotelTab = document.querySelector('.mobile-tab-btn[data-panel="hotel"]');
+              if (hotelTab) hotelTab.click();
+            } else if (pHotel) {
+              pHotel.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            }
+            return;
+          }
+          const arrivedBtn = e.target.closest('.btn-arrived-now');
+          if (arrivedBtn) {
+            const idx = day.items.findIndex(x => x.id === arrivedBtn.getAttribute('data-id'));
+            if (idx !== -1) {
+              ensureDayTimesSnapshot(day);
+              const now = new Date();
+              const nowMins = now.getHours() * 60 + now.getMinutes();
+              day.items[idx].arrivedAtStr = fmtHM(nowMins);
+              day.items[idx].done = true;
+              cascadeRecalculateDayFrom(day, idx, nowMins);
+              saveState(); renderAll(false);
+              showToast(`已記錄「${cleanEntityName(day.items[idx].title)}」於 ${fmtHM(nowMins)} 抵達，後續行程已自動重算！`);
+            }
+            return;
+          }
+          const extendBtn = e.target.closest('.btn-extend-stay');
+          if (extendBtn) {
+            const idx = day.items.findIndex(x => x.id === extendBtn.getAttribute('data-id'));
+            if (idx !== -1) {
+              ensureDayTimesSnapshot(day);
+              const cur = day.items[idx];
+              const r = parseTimeRange(cur.time);
+              const sMins = r ? r.s : (9 * 60);
+              cur.stayMins = Math.min(720, getItemStayMins(cur) + 30);
+              cascadeRecalculateDayFrom(day, idx, sMins);
+              saveState(); renderAll(false);
+              showToast(`已將本站延長至 ${cur.stayMins} 分鐘並自動順延後續行程`);
+            }
+            return;
+          }
+          const restoreOrigBtn = e.target.closest('.btn-restore-orig-times');
+          if (restoreOrigBtn) {
+            if (restoreDayOrigTimes(day)) {
+              saveState(); renderAll(false);
+              showToast('已恢復原訂時間表');
+            }
+            return;
+          }
+          const pickSchedBtn = e.target.closest('.btn-schedule-pick');
+          if (pickSchedBtn) {
+            try {
+              const cand = JSON.parse(pickSchedBtn.getAttribute('data-pick-json') || '{}');
+              if (cand && cand.title) {
+                const n = state.days.length;
+                let insertIdx = day.items.findIndex(x => ['return', 'hotel', 'toAirport'].includes(itemRole(x, activeDayIndex, n)));
+                if (insertIdx === -1) insertIdx = day.items.length;
+                const prev = insertIdx > 0 ? day.items[insertIdx - 1] : null;
+                const pr = prev ? parseTimeRange(prev.time) : null;
+                const startM = pr ? (pr.e + 15) : (15 * 60);
+                const stayM = defaultDuration(cand.category);
+                day.items.splice(insertIdx, 0, {
+                  id: 'item-pick-' + Date.now() + '-' + Math.random().toString(36).slice(2, 5),
+                  category: cand.category || '美食',
+                  time: fmtRange(startM, startM + stayM),
+                  stayMins: stayM,
+                  title: cand.title,
+                  address: cand.address || day.cityKey || state.cityKey,
+                  mapsQuery: `${cleanEntityName(cand.title)} ${day.cityKey || state.cityKey}`.trim(),
+                  hours: cand.hours || '依現場為準',
+                  cost: cand.cost || '',
+                  transport: cand.transport || '',
+                  snackNote: cand.snackNote || '',
+                  desc: cand.desc || cand.snackNote || '',
+                  expanded: false, done: false, userAdded: true
+                });
+                cascadeRecalculateDayFrom(day, insertIdx, startM);
+                saveState(); renderAll(true);
+                showToast(`已將「${cleanEntityName(cand.title)}」排進 Day ${day.dayNumber} 時間軸！`);
+              }
+            } catch (err) {}
+            return;
+          }
           const doneBtn = e.target.closest('.item-done-btn');
           if (doneBtn) { const it = day.items.find(x => x.id === doneBtn.getAttribute('data-id')); if (it) { it.done = !it.done; saveState(); renderActiveDay(false); } return; }
           const toggleBtn = e.target.closest('.item-toggle-detail');
@@ -7839,6 +8324,53 @@
             day.items[idx] = B; day.items[j] = A;
             rescheduleDay(state, activeDayIndex, 'shift');
             saveState(); renderActiveDay(false);
+          }
+        });
+
+        document.getElementById('heroRoutePills').addEventListener('click', (e) => {
+          const btn = e.target.closest('.hero-day-jump');
+          if (!btn) return;
+          const idx = parseInt(btn.getAttribute('data-hero-day'), 10);
+          if (!isNaN(idx) && idx >= 0 && idx < state.days.length) {
+            activeDayIndex = idx;
+            renderDayTabs(); renderActiveDay(true); renderHotelCard();
+            const pan = document.getElementById('panelItinerary');
+            if (pan) pan.scrollIntoView({ behavior: 'smooth', block: 'start' });
+          }
+        });
+
+        document.getElementById('itineraryList').addEventListener('change', (e) => {
+          const day = state.days[activeDayIndex]; if (!day) return;
+          const stayInp = e.target.closest('.stay-mins-input');
+          if (stayInp) {
+            const idx = day.items.findIndex(x => x.id === stayInp.getAttribute('data-id'));
+            if (idx !== -1) {
+              ensureDayTimesSnapshot(day);
+              const val = Math.max(5, Math.min(720, parseInt(stayInp.value, 10) || 60));
+              const cur = day.items[idx];
+              const r = parseTimeRange(cur.time);
+              const sMins = r ? r.s : 9 * 60;
+              cur.stayMins = val;
+              cascadeRecalculateDayFrom(day, idx, sMins);
+              saveState(); renderAll(false);
+              showToast(`已調整「${cleanEntityName(cur.title)}」停留 ${val} 分鐘並重算後續時間`);
+            }
+            return;
+          }
+          const transitInp = e.target.closest('.transit-mins-input');
+          if (transitInp) {
+            const idx = day.items.findIndex(x => x.id === transitInp.getAttribute('data-id'));
+            if (idx !== -1 && idx < day.items.length - 1) {
+              ensureDayTimesSnapshot(day);
+              const val = Math.max(0, Math.min(360, parseInt(transitInp.value, 10) || 0));
+              const cur = day.items[idx];
+              cur.transitToNextMins = val;
+              const r = parseTimeRange(cur.time);
+              const curEnd = r ? r.e : (9 * 60 + getItemStayMins(cur));
+              cascadeRecalculateDayFrom(day, idx + 1, curEnd + val);
+              saveState(); renderAll(false);
+              showToast(`已調整前往下一站車程為 ${val} 分鐘並重算後續時間`);
+            }
           }
         });
 
